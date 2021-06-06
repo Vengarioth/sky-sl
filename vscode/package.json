@@ -1,0 +1,41 @@
+{
+	"name": "sky-sl-language-client",
+	"description": "VSCode part of the sky-sl language server",
+	"author": "Andreas Fischer <opensource@deviru.de>",
+	"license": "MIT",
+	"version": "0.0.1",
+	"publisher": "Vengarioth",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Vengarioth/sky-sl"
+	},
+	"engines": {
+		"vscode": "^1.52.0"
+	},
+	"activationEvents": [
+		"onLanguage:skysl"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"languages": [
+			{
+				"id": "skysl",
+				"extensions": [
+					".skysl"
+				],
+				"aliases": [
+					"sky-sl"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		]
+	},
+	"scripts": {},
+	"dependencies": {
+		"@types/node": "^15.12.1",
+		"vscode-languageclient": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.52.0"
+	}
+}
