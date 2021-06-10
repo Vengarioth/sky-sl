@@ -1,135 +1,91 @@
-mod cursor;
-mod error;
-mod lexer;
+use crate::lexer::Token;
+use crate::syn::cst::*;
 
-pub use cursor::*;
-pub use error::*;
-pub use lexer::*;
+mod parser;
+pub use parser::*;
 
-use crate::ast::*;
-
-pub fn parse(input: &str) {
-    let token = tokenize(input).collect::<Vec<_>>();
-    let mut cursor = TokenCursor::new(0, input, &token);
-
-    while let Some((item, next)) = parse_item(cursor) {
-        dbg!(item);
-        cursor = next;
-    }
+pub fn parse(token: &[Token]) -> GreenNode {
+    let mut parser = Parser::new(token);
+    parse_item(&mut parser);
+    parser.process()
 }
 
-#[derive(Debug, Copy, Clone)]
-struct TokenCursor<'a> {
-    offset: usize,
-    input: &'a str,
-    token: &'a [Token],
-}
+fn parse_item(parser: &mut Parser) {
+    // consume token until we can construct an item
+    while !parser.eof() {
+        match parser.current() {
+            // skip whitespaces
+            t if t.is_whitespace() => {
+                parser.bump();
+                continue;
+            },
 
-impl<'a> TokenCursor<'a> {
-    pub fn new(offset: usize, input: &'a str, token: &'a [Token]) -> Self {
-        Self {
-            offset,
-            input,
-            token,
-        }
-    }
-
-    fn current(&self) -> &'a Token {
-        &self.token[0]
-    }
-
-    fn current_str(&self) -> &'a str {
-        &self.input[0..self.token[0].length]
-    }
-
-    fn next(&self) -> Option<Self> {
-        if self.token.len() > 1 {
-            let current = &self.token[0];
-            let offset = self.offset + current.length;
-            Some(Self::new(offset, &self.input[current.length..], &self.token[1..]))
-        } else {
-            None
+            // parse struct
+            SyntaxKind::StructKeyword => parse_struct(parser),
+            
+            // parse function
+            SyntaxKind::FnKeyword => parse_function(parser),
+            
+            // otherwise emit an error, consume and then continue
+            _ => {
+                parser.emit_error(); // Unexpected..
+                parser.bump();
+            }
         }
     }
 }
 
+fn parse_struct(parser: &mut Parser) {
+    let marker = parser.begin_node();
+    parser.bump();
 
-fn parse_item(cursor: TokenCursor) -> Option<(ItemKind, TokenCursor)> {
-    if let Some((item, cursor)) = parse_struct(cursor) {
-        return Some((ItemKind::Struct(item), cursor));
-    }
+    parse_identifier(parser);
 
-    if let Some((item, cursor)) = parse_function(cursor) {
-        return Some((ItemKind::Function(item), cursor));
-    }
-
-    None
+    marker.complete(parser, SyntaxKind::Struct);
 }
 
-fn parse_struct(cursor: TokenCursor) -> Option<(StructKind, TokenCursor)> {
-    let cursor = skip_whitespace(cursor)?;
-    let cursor = parse_keyword(cursor, "struct")?;
-    let cursor = skip_whitespace(cursor)?;
-    let (identifier, cursor) = parse_identifier(cursor)?;
-    let cursor = skip_whitespace(cursor)?;
+fn parse_function(parser: &mut Parser) {
+    let marker = parser.begin_node();
+    parser.bump();
+    
+    parse_identifier(parser);
 
-    Some((StructKind {
-        identifier,
-    }, cursor))
-}
-
-fn parse_function(cursor: TokenCursor) -> Option<(FunctionKind, TokenCursor)> {
-    let cursor = skip_whitespace(cursor)?;
-    let cursor = parse_keyword(cursor, "fn")?;
-    let cursor = skip_whitespace(cursor)?;
-    let (identifier, cursor) = parse_identifier(cursor)?;
-    let cursor = skip_whitespace(cursor)?;
-
-    Some((FunctionKind {
-        identifier,
-    }, cursor))
-}
-
-fn parse_identifier(cursor: TokenCursor) -> Option<(Identifier, TokenCursor)> {
-    if cursor.current().kind != TokenKind::Identifier {
-        return None;
+    parser.bump_if(SyntaxKind::Whitespace);
+    if !parser.is_at(SyntaxKind::OpenParen) {
+        parser.emit_error(); // expected Identifier
+    } else {
+        parser.bump();
     }
 
-    Some((Identifier {
-
-    }, cursor.next()?))
-}
-
-fn parse_keyword<'c, 's>(cursor: TokenCursor<'c>, keyword: &'s str) -> Option<TokenCursor<'c>> {
-    if cursor.current().kind != TokenKind::Identifier {
-        return None;
+    parser.bump_if(SyntaxKind::Whitespace);
+    if !parser.is_at(SyntaxKind::CloseParen) {
+        parser.emit_error(); // expected Identifier
+    } else {
+        parser.bump();
     }
 
-    if cursor.current_str() != keyword {
-        return None;
-    }
-
-    return cursor.next()
+    marker.complete(parser, SyntaxKind::Fn);
 }
 
-fn skip_whitespace(mut cursor: TokenCursor) -> Option<TokenCursor> {
-    while cursor.current().kind == TokenKind::Whitespace {
-        if let Some(next) = cursor.next() {
-            cursor = next;
-        } else {
-            return Some(cursor);
-        }
-    }
+fn parse_identifier(parser: &mut Parser) {
+    parser.bump_if(SyntaxKind::Whitespace);
 
-    Some(cursor)
+    if !parser.is_at(SyntaxKind::Identifier) {
+        parser.emit_error(); // expected Identifier
+    } else {
+        parser.bump();
+    }
 }
+
 
 #[cfg(test)]
 mod tests {
+    use crate::lexer::tokenize;
     use super::*;
 
     #[test]
     fn it_works() {
-        parse("struct Foo { bar: f32 }");
+        let token = tokenize("fn foo() { }");
+        dbg!(parse(&token));
     }
 }
