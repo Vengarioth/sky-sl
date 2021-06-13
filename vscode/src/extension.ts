@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import { workspace, ExtensionContext, window } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -10,20 +10,33 @@ export function activate(context: ExtensionContext) {
     );
     
     const serverOptions: ServerOptions = {
-        run: { command: serverCommand, },
-        debug: { command: serverCommand, },
+        run: { command: serverCommand, transport: TransportKind.stdio },
+        debug: { command: serverCommand, transport: TransportKind.stdio },
     };
+
+    const traceOutputChannel = window.createOutputChannel(
+        "sky-sl language server trace"
+    );
 
     const clientOptions: LanguageClientOptions = {
-        documentSelector: [{ scheme: 'file', language: 'sky-sl' }],
-        synchronize: {fileEvents: workspace.createFileSystemWatcher('**/.skysl')}
+        documentSelector: [{ scheme: 'file', language: 'skysl' }],
+        initializationOptions: workspace.getConfiguration('skysl'),
+        // synchronize: {
+        //     fileEvents: workspace.createFileSystemWatcher('**/*.skysl'),
+        // },
+        diagnosticCollectionName: "skysl",
+        traceOutputChannel,
     };
 
-    client = new LanguageClient('sky-sl', 'Sky-SL language server', serverOptions, clientOptions);
+    client = new LanguageClient('sky-sl', 'skysl language server', serverOptions, clientOptions);
 
     client.start();
 }
 
 export function deactivate(): Thenable<void> | undefined {
-    return undefined;
+    if (!client) {
+        return undefined;
+    }
+    
+    return client.stop();
 }

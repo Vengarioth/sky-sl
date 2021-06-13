@@ -1,4 +1,3 @@
-use crate::syn::NodeOrToken;
 use super::SyntaxKind;
 use text_size::TextSize;
 use std::sync::Arc;

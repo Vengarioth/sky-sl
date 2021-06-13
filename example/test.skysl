@@ -2,6 +2,10 @@ struct Foo {
     
 }
 
-fn foo() {
+struct Bar {
+    
+}
 
+fn foo() {
+    
 }

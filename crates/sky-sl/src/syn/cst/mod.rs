@@ -1,10 +1,12 @@
 use std::num::NonZeroU32;
 
 mod green;
+mod line_index;
 mod syntax_kind;
 mod trivia;
 
 pub use green::*;
+pub use line_index::*;
 pub use syntax_kind::*;
 pub use trivia::*;
 
@@ -12,7 +14,7 @@ pub use trivia::*;
 pub struct SyntaxId(NonZeroU32);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-enum Lang {}
+pub enum Lang {}
 impl rowan::Language for Lang {
     type Kind = SyntaxKind;
     fn kind_from_raw(raw: rowan::SyntaxKind) -> Self::Kind {
@@ -24,7 +26,9 @@ impl rowan::Language for Lang {
     }
 }
 
-type SyntaxNode = rowan::SyntaxNode<Lang>;
-type SyntaxToken = rowan::SyntaxToken<Lang>;
-type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
-type Builder<'a> = rowan::GreenNodeBuilder<'a>;
+pub type SyntaxNode = rowan::SyntaxNode<Lang>;
+pub type SyntaxToken = rowan::SyntaxToken<Lang>;
+pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
+pub type Builder<'a> = rowan::GreenNodeBuilder<'a>;
+pub type Checkpoint = rowan::Checkpoint;
+pub use rowan::{WalkEvent};

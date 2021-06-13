@@ -1,6 +1,6 @@
 {
-	"name": "sky-sl-language-client",
-	"description": "VSCode part of the sky-sl language server",
+	"name": "skysl-language-client",
+	"description": "VSCode part of the skysl language server",
 	"author": "Andreas Fischer <opensource@deviru.de>",
 	"license": "MIT",
 	"version": "0.0.1",
@@ -29,6 +29,11 @@
 				"configuration": "./language-configuration.json"
 			}
 		]
+	},
+	"configurationDefaults": {
+		"skysl": {
+			"editor.semanticHighlighting.enabled": true
+		}
 	},
 	"scripts": {},
 	"dependencies": {

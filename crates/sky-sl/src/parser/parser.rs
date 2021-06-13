@@ -1,18 +1,23 @@
 use crate::{lexer::Token, syn::cst::*};
-use text_size::TextSize;
-use std::sync::Arc;
+use super::{ParseError, ErrorKind};
 
 #[derive(Debug)]
 pub struct Parser<'a> {
-    events: Vec<ParseEvent>,
+    builder: Builder<'a>,
     token: &'a [Token],
+    input: &'a str,
+    errors: Vec<ParseError>,
+    offset: usize,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(token: &'a [Token]) -> Self {
+    pub fn new(token: &'a [Token], input: &'a str) -> Self {
         Self {
-            events: Vec::new(),
+            builder: Builder::new(),
+            input,
             token,
+            errors: Vec::new(),
+            offset: 0,
         }
     }
 
@@ -32,123 +37,55 @@ impl<'a> Parser<'a> {
 
     pub fn bump(&mut self) {
         let kind = self.token[0].kind();
-        let length = self.token[0].text_len();
-        self.token = &self.token[1..];
+        let length = self.token[0].len();
 
-        self.events.push(ParseEvent::Token {
-            kind,
-            length,
-        });
+        let current_str = &self.input[0..length];
+        self.input = &self.input[length..];
+        self.token = &self.token[1..];
+        self.offset += length;
+
+        self.emit_token(kind, current_str);
+    }
+
+    pub fn recover(&mut self, recover_points: &[SyntaxKind]) {
     }
 
     pub fn eof(&self) -> bool {
         self.token.len() == 0
     }
 
-    pub fn begin_node(&mut self) -> Marker {
-        let pos = self.events.len() as u32;
-        self.events.push(ParseEvent::tombstone());
-        Marker::new(pos)
+    pub fn begin_node(&mut self, kind: SyntaxKind) {
+        self.builder.start_node(kind.into());
     }
 
-    pub fn emit_error(&mut self) {
-        self.events.push(ParseEvent::Error {
-            kind: self.current(),
+    pub fn end_node(&mut self) {
+        self.builder.finish_node();
+    }
+
+    pub fn emit_token(&mut self, kind: SyntaxKind, text: &str) {
+        self.builder.token(kind.into(), text);
+    }
+
+    pub fn emit_error(&mut self, kind: ErrorKind) {
+        self.errors.push(ParseError {
+            offset: self.offset,
+            kind,
         });
     }
 
-    pub fn finish(self) -> Vec<ParseEvent> {
-        self.events
-    }
+    pub fn finish(self) -> ParseResult {
+        let root = SyntaxNode::new_root(self.builder.finish());
+        let errors = self.errors;
 
-    pub fn process(self) -> GreenNode {
-
-        let mut stack: Vec<(SyntaxKind, Vec<Arc<GreenChild>>)> = Vec::new();
-        let mut current: Option<(SyntaxKind, Vec<Arc<GreenChild>>)> = Some((SyntaxKind::Module, Vec::new()));
-
-        for event in self.events {
-            match event {
-                ParseEvent::BeginNode { kind } => {
-                    if let Some(previous) = current.replace((kind, Vec::new())) {
-                        stack.push(previous);
-                    }
-                },
-                ParseEvent::EndNode => {
-                    let (kind, children) = current.take().unwrap();
-                    let node = GreenNode {
-                        kind,
-                        children,
-                    };
-
-                    if let Some((kind, mut previous)) = stack.pop() {
-                        previous.push(Arc::new(GreenChild::Node(node)));
-                        current = Some((kind, previous));
-                    }
-                },
-                ParseEvent::Token { kind, length } => {
-                    if let Some((_, current)) = &mut current {
-                        current.push(Arc::new(GreenChild::Token(GreenToken {
-                            kind,
-                            length,
-                        })));
-                    }
-                },
-                _ => (),
-            }
+        ParseResult {
+            root,
+            errors,
         }
-
-        let (kind, children) = current.unwrap();
-        let node = GreenNode {
-            kind,
-            children,
-        };
-
-        node
     }
 }
 
 #[derive(Debug)]
-pub enum ParseEvent {
-    BeginNode {
-        kind: SyntaxKind,
-    },
-    EndNode,
-    Token {
-        kind: SyntaxKind,
-        length: TextSize,
-    },
-    Error {
-        kind: SyntaxKind,
-    },
-}
-
-impl ParseEvent {
-    pub fn tombstone() -> Self {
-        ParseEvent::BeginNode {
-            kind: SyntaxKind::Error,
-        }
-    }
-}
-
-#[must_use]
-#[derive(Debug)]
-pub struct Marker {
-    pos: u32,
-}
-
-impl Marker {
-    fn new(pos: u32) -> Self {
-        Self {
-            pos,
-        }
-    }
-
-    pub fn complete(self, parser: &mut Parser, kind: SyntaxKind) {
-        let index = self.pos as usize;
-        match parser.events[index] {
-            ParseEvent::BeginNode { kind: ref mut slot, .. } => *slot = kind,
-            _ => unreachable!()
-        }
-        parser.events.push(ParseEvent::EndNode);
-    }
+pub struct ParseResult {
+    pub root: SyntaxNode,
+    pub errors: Vec<ParseError>,
 }
