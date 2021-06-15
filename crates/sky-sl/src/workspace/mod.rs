@@ -1,4 +1,4 @@
-use camino::Utf8PathBuf;
+use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::syn::cst::LineIndex;
 
@@ -8,6 +8,32 @@ pub struct Workspace {
 }
 
 impl Workspace {
+    /// Looks for a SkySL workspace in the file system by recursively looking for a workspace defining file upwards in the file system
+    pub fn new_from_file_system_hierachy(query: Utf8PathBuf) -> Option<Self> {
+        let workspace_path = Self::find_workspace_file(&query)?;
+        Some(Self::new(workspace_path))
+    }
+
+    fn find_workspace_file(query: &Utf8Path) -> Option<Utf8PathBuf> {
+        if query.is_dir() {
+            if let Some(result) = Self::find_workspace_file(&query.join("skysl.workspace")) {
+                Some(result)
+            } else if let Some(parent) = query.parent() {
+                Self::find_workspace_file(parent)
+            } else {
+                None
+            }
+        } else {
+            if query.ends_with("skysl.workspace") {
+                return Some(query.into());
+            } else if let Some(parent) = query.parent() {
+                Self::find_workspace_file(parent)
+            } else {
+                None
+            }
+        }
+    }
+
     pub fn new(root: Utf8PathBuf) -> Self {
         Self {
             root,

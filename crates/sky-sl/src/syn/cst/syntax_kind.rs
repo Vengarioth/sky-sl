@@ -11,6 +11,12 @@ pub enum SyntaxKind {
     /// A function
     Fn,
 
+    /// A list of arguments
+    ArgumentList,
+
+    /// A single argument
+    Argument,
+
     /// the "struct" keyword
     StructKeyword,
 

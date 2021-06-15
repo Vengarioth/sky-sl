@@ -27,6 +27,7 @@ impl rowan::Language for Lang {
 }
 
 pub type SyntaxNode = rowan::SyntaxNode<Lang>;
+pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<Lang>;
 pub type SyntaxToken = rowan::SyntaxToken<Lang>;
 pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 pub type Builder<'a> = rowan::GreenNodeBuilder<'a>;

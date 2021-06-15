@@ -7,6 +7,8 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 use camino::Utf8PathBuf;
 
+mod semantics;
+
 #[derive(Debug)]
 struct Backend {
     client: Client,
@@ -313,6 +315,8 @@ fn convert_syntax_kind(syntax_kind: sky_sl::syn::cst::SyntaxKind) -> SymbolKind 
         SyntaxKind::Module => SymbolKind::Module,
         SyntaxKind::Struct => SymbolKind::Struct,
         SyntaxKind::Fn => SymbolKind::Function,
+        SyntaxKind::ArgumentList => SymbolKind::Unknown,
+        SyntaxKind::Argument => SymbolKind::Unknown,
         SyntaxKind::StructKeyword => SymbolKind::Struct,
         SyntaxKind::FnKeyword => SymbolKind::Function,
         SyntaxKind::Identifier => SymbolKind::Unknown,

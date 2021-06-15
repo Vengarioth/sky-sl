@@ -78,7 +78,7 @@ fn parse_function(parser: &mut Parser) {
         parser.bump();
     }
 
-    // TODO parse argument list
+    parse_arguments(parser);
 
     parser.bump_if(SyntaxKind::Whitespace);
     if !parser.is_at(SyntaxKind::CloseParen) {
@@ -102,6 +102,37 @@ fn parse_function(parser: &mut Parser) {
     } else {
         parser.bump();
     }
+
+    parser.end_node();
+}
+
+fn parse_arguments(parser: &mut Parser) {
+    
+    parser.begin_node(SyntaxKind::ArgumentList);
+    
+    loop {
+        parser.bump_if(SyntaxKind::Whitespace);
+
+        if !parser.is_at(SyntaxKind::Identifier) {
+            break;
+        }
+
+        parser.begin_node(SyntaxKind::Argument);
+        parser.bump();
+
+        parser.bump_if(SyntaxKind::Whitespace);
+        parser.bump_if(SyntaxKind::Colon);
+        
+        parser.bump_if(SyntaxKind::Whitespace);
+        // TODO proper type identifier
+        parser.bump_if(SyntaxKind::Identifier);
+        
+        parser.end_node();
+
+        parser.bump_if(SyntaxKind::Whitespace);
+        parser.bump_if(SyntaxKind::Comma);
+    }
+
 
     parser.end_node();
 }
@@ -132,13 +163,6 @@ mod tests {
     #[test]
     fn it_works() {
         let input = "fn foo() { }";
-        let token = tokenize(input);
-        dbg!(parse(&token, input));
-    }
-
-    #[test]
-    fn it_recovers() {
-        let input = "fn foo fn bar()";
         let token = tokenize(input);
         dbg!(parse(&token, input));
     }
