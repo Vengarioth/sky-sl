@@ -91,23 +91,13 @@ impl<'a> Parser<'a> {
     pub fn emit_error(&mut self, kind: ErrorKind) {
         self.errors.push(SyntaxError {
             offset: self.offset,
+            length: self.token.first().map(|t| t.len()).unwrap_or(1),
             kind,
         });
     }
 
-    pub fn finish(self) -> ParseResult {
-        let root = Parse::new(self.builder.finish());
-        let errors = self.errors;
-
-        ParseResult {
-            root,
-            errors,
-        }
+    pub fn finish(self) -> Parse<Root> {
+        let root = self.builder.finish();
+        Parse::new(root, self.errors)
     }
-}
-
-#[derive(Debug)]
-pub struct ParseResult {
-    pub root: Parse<Root>,
-    pub errors: Vec<SyntaxError>,
 }

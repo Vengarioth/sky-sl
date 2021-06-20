@@ -10,8 +10,8 @@ fn main() {
             let token = sky_sl::lexer::tokenize(&input);
             let result = sky_sl::parser::parse(&token, &input);
 
-            dbg!(result.errors);
-            dbg!(result.root);
+            dbg!(result.errors());
+            dbg!(result.tree());
         },
     }
 }

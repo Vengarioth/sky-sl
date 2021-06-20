@@ -1,7 +1,7 @@
 use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::db::{CompilerDatabase, SourceDatabase, SyntaxDatabase};
-use crate::syn::cst::LineIndex;
+use crate::syn::{Parse, cst::LineIndex, ast::Root};
 use std::sync::{Arc, Mutex};
 
 mod fs;
@@ -73,7 +73,7 @@ impl Workspace {
     }
 
     /// deprecated
-    pub fn document_symbols(&self, path: &Utf8Path) -> Result<crate::parser::ParseResult, ()> {
+    pub fn document_symbols(&self, path: &Utf8Path) -> Result<Parse<Root>, ()> {
         let input = std::fs::read_to_string(path).expect("could not read file to string");
         let token = crate::lexer::tokenize(&input);
         Ok(crate::parser::parse(&token, &input))

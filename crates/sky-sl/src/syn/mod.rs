@@ -1,5 +1,7 @@
-use std::marker::PhantomData;
 use rowan::GreenNode;
+use crate::parser::SyntaxError;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 pub mod ast;
 pub mod cst;
@@ -8,13 +10,15 @@ pub mod cst;
 pub struct Parse<T> {
     green: GreenNode,
     phantom: PhantomData<T>,
+    errors: Arc<Vec<SyntaxError>>,
 }
 
 impl<T: ast::AstNode> Parse<T> {
-    pub fn new(green: GreenNode) -> Self {
+    pub fn new(green: GreenNode, errors: Vec<SyntaxError>) -> Self {
         Self {
             green,
             phantom: PhantomData,
+            errors: Arc::new(errors),
         }
     }
 
@@ -25,6 +29,10 @@ impl<T: ast::AstNode> Parse<T> {
     pub fn tree(&self) -> T {
         T::cast_from(self.syntax_node()).unwrap()
     }
+
+    pub fn errors(&self) -> &[SyntaxError] {
+        &self.errors
+    }
 }
 
 impl<T> Clone for Parse<T> {
@@ -32,6 +40,7 @@ impl<T> Clone for Parse<T> {
         Self {
             green: self.green.clone(),
             phantom: PhantomData,
+            errors: Arc::clone(&self.errors),
         }
     }
 }

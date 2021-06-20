@@ -11,7 +11,5 @@ pub trait SyntaxDatabase: SourceDatabase {
 fn ast(db: &dyn SyntaxDatabase, name: Utf8PathBuf) -> Parse<Root> {
     let input = db.input_file(name);
     let token = crate::lexer::tokenize(&input);
-    let result = crate::parser::parse(&token, &input);
-
-    result.root
+    crate::parser::parse(&token, &input)
 }

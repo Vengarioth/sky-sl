@@ -1,12 +1,12 @@
 use crate::lexer::Token;
-use crate::syn::cst::*;
+use crate::syn::{Parse, cst::*, ast::Root};
 
 mod error;
 mod parser;
 pub use error::*;
 pub use parser::*;
 
-pub fn parse<'a>(token: &'a [Token], input: &'a str) -> ParseResult {
+pub fn parse<'a>(token: &'a [Token], input: &'a str) -> Parse<Root> {
     let mut parser = Parser::new(token, input);
     let _ = parse_item(&mut parser);
     parser.finish()

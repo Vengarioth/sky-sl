@@ -87,26 +87,28 @@ impl LanguageServer for Backend {
                 Position::new(end.line, end.column),
             );
 
-            let selection_range = struct_definition.identifier().unwrap().syntax().text_range();
-            let start = line_index.find_position(selection_range.start());
-            let end = line_index.find_position(selection_range.end());
-            let selection_range = Range::new(
-                Position::new(start.line, start.column),
-                Position::new(end.line, end.column),
-            );
-
-            #[allow(deprecated)]
-            let symbol = DocumentSymbol {
-                name: struct_definition.identifier().unwrap().syntax().to_string(),
-                detail: None,
-                kind: SymbolKind::Struct,
-                tags: None,
-                range,
-                selection_range,
-                children: None,
-                deprecated: None,
-            };
-            symbols.push(symbol);
+            if let Some(identifier) = struct_definition.identifier() {
+                let selection_range = identifier.syntax().text_range();
+                let start = line_index.find_position(selection_range.start());
+                let end = line_index.find_position(selection_range.end());
+                let selection_range = Range::new(
+                    Position::new(start.line, start.column),
+                    Position::new(end.line, end.column),
+                );
+    
+                #[allow(deprecated)]
+                let symbol = DocumentSymbol {
+                    name: identifier.syntax().to_string(),
+                    detail: None,
+                    kind: SymbolKind::Struct,
+                    tags: None,
+                    range,
+                    selection_range,
+                    children: None,
+                    deprecated: None,
+                };
+                symbols.push(symbol);
+            }
         }
 
         for fn_definition in ast.function_definitions() {
@@ -130,7 +132,7 @@ impl LanguageServer for Backend {
     
                 #[allow(deprecated)]
                 let symbol = DocumentSymbol {
-                    name: fn_definition.identifier().unwrap().syntax().to_string(),
+                    name: identifier.syntax().to_string(),
                     detail: None,
                     kind: SymbolKind::Function,
                     tags: None,
@@ -142,6 +144,8 @@ impl LanguageServer for Backend {
                 symbols.push(symbol);
             }
         }
+
+        dbg!(&symbols);
 
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
@@ -212,13 +216,38 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let path = url_to_path(&params.text_document.uri).unwrap();
+        let version = params.text_document.version;
+        let uri = params.text_document.uri;
+
+        let path = url_to_path(&uri).unwrap();
         let mut workspace = self.workspaces.find_or_create(&path).unwrap();
         let file_path = path.strip_prefix(workspace.package_root()).unwrap();
 
-        dbg!(&params.content_changes);
-
         workspace.update_file(file_path.into(), Arc::new(params.content_changes[0].text.to_string()));
+
+        let ast = workspace.ast(file_path.into()).unwrap();
+        let line_index = workspace.line_index(file_path.into()).unwrap();
+
+        let mut diagnostics = Vec::new();
+        for error in ast.errors() {
+
+            dbg!(error);
+            let start = line_index.find_position((error.offset as u32).into());
+            let end = line_index.find_position(((error.offset + error.length) as u32).into());
+
+            diagnostics.push(Diagnostic::new(
+                Range::new(Position::new(start.line, start.column), Position::new(end.line, end.column)),
+                Some(DiagnosticSeverity::Error),
+                Some(NumberOrString::Number(0)),
+                Some(" ".to_string()),
+                "Some Diagnostic".to_string(),
+                None,
+                None,
+            ));
+        }
+
+
+        self.client.publish_diagnostics(uri, diagnostics, Some(version)).await;
 
         self.client
             .log_message(MessageType::Info, "file changed!")

@@ -31,4 +31,4 @@ pub type SyntaxToken = rowan::SyntaxToken<Lang>;
 pub type SyntaxElement = rowan::NodeOrToken<SyntaxNode, SyntaxToken>;
 pub type Builder<'a> = rowan::GreenNodeBuilder<'a>;
 pub type Checkpoint = rowan::Checkpoint;
-pub use rowan::{WalkEvent};
+pub use rowan::{WalkEvent, TextRange, TextSize};

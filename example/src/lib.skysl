@@ -9,3 +9,11 @@ struct Bar {
 fn foo() {
     
 }
+
+fn yxz() {
+
+}
+
+struct Asdf {
+    
+}
