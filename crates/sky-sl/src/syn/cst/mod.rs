@@ -1,11 +1,9 @@
 use std::num::NonZeroU32;
 
-mod green;
 mod line_index;
 mod syntax_kind;
 mod trivia;
 
-pub use green::*;
 pub use line_index::*;
 pub use syntax_kind::*;
 pub use trivia::*;
@@ -26,6 +24,7 @@ impl rowan::Language for Lang {
     }
 }
 
+pub type GreenNode = rowan::GreenNode;
 pub type SyntaxNode = rowan::SyntaxNode<Lang>;
 pub type SyntaxNodeChildren = rowan::SyntaxNodeChildren<Lang>;
 pub type SyntaxToken = rowan::SyntaxToken<Lang>;

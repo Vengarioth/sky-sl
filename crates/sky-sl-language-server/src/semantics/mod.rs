@@ -1,43 +1,66 @@
-#[allow(dead_code)]
-pub mod token {
-    use tower_lsp::lsp_types::*;
+use tower_lsp::lsp_types::*;
+use sky_sl::syn::{ast::*, cst::*};
 
-    pub const NAMESPACE: SemanticTokenType = SemanticTokenType::new("namespace");
-    pub const TYPE: SemanticTokenType = SemanticTokenType::new("type");
-    pub const CLASS: SemanticTokenType = SemanticTokenType::new("class");
-    pub const ENUM: SemanticTokenType = SemanticTokenType::new("enum");
-    pub const INTERFACE: SemanticTokenType = SemanticTokenType::new("interface");
-    pub const STRUCT: SemanticTokenType = SemanticTokenType::new("struct");
-    pub const TYPE_PARAMETER: SemanticTokenType = SemanticTokenType::new("typeParameter");
-    pub const PARAMETER: SemanticTokenType = SemanticTokenType::new("parameter");
-    pub const VARIABLE: SemanticTokenType = SemanticTokenType::new("variable");
-    pub const PROPERTY: SemanticTokenType = SemanticTokenType::new("property");
-    pub const ENUM_MEMBER: SemanticTokenType = SemanticTokenType::new("enumMember");
-    pub const EVENT: SemanticTokenType = SemanticTokenType::new("event");
-    pub const FUNCTION: SemanticTokenType = SemanticTokenType::new("function");
-    pub const METHOD: SemanticTokenType = SemanticTokenType::new("method");
-    pub const MACRO: SemanticTokenType = SemanticTokenType::new("macro");
-    pub const KEYWORD: SemanticTokenType = SemanticTokenType::new("keyword");
-    pub const MODIFIER: SemanticTokenType = SemanticTokenType::new("modifier");
-    pub const COMMENT: SemanticTokenType = SemanticTokenType::new("comment");
-    pub const STRING: SemanticTokenType = SemanticTokenType::new("string");
-    pub const NUMBER: SemanticTokenType = SemanticTokenType::new("number");
-    pub const REGEXP: SemanticTokenType = SemanticTokenType::new("regexp");
-    pub const OPERATOR: SemanticTokenType = SemanticTokenType::new("operator");
+pub mod token;
+pub mod modifier;
+
+mod delta_encoder;
+pub use delta_encoder::*;
+
+pub fn get_legend() -> SemanticTokensLegend {
+    SemanticTokensLegend {
+        token_types: token::get_semantic_token_types(),
+        token_modifiers: modifier::get_semantic_modifier_types(),
+    }
 }
 
-#[allow(dead_code)]
-pub mod token_modifier {
-    use tower_lsp::lsp_types::*;
+pub fn get_semantic_tokens(root: Root, line_index: &LineIndex) -> SemanticTokens {
 
-    pub const DECLARATION: SemanticTokenModifier = SemanticTokenModifier::new("declaration");
-    pub const DEFINITION: SemanticTokenModifier = SemanticTokenModifier::new("definition");
-    pub const READONLY: SemanticTokenModifier = SemanticTokenModifier::new("readonly");
-    pub const STATIC: SemanticTokenModifier = SemanticTokenModifier::new("static");
-    pub const DEPRECATED: SemanticTokenModifier = SemanticTokenModifier::new("deprecated");
-    pub const ABSTRACT: SemanticTokenModifier = SemanticTokenModifier::new("abstract");
-    pub const ASYNC: SemanticTokenModifier = SemanticTokenModifier::new("async");
-    pub const MODIFICATION: SemanticTokenModifier = SemanticTokenModifier::new("modification");
-    pub const DOCUMENTATION: SemanticTokenModifier = SemanticTokenModifier::new("documentation");
-    pub const DEFAULT_LIBRARY: SemanticTokenModifier = SemanticTokenModifier::new("defaultLibrary");
+    let mut tokens = Vec::new();
+    let mut delta_encoder = DeltaEncoder::new();
+    visit_root(root, line_index, &mut delta_encoder, &mut tokens);
+
+    SemanticTokens {
+        result_id: None,
+        data: tokens,
+    }
+}
+
+fn visit_root(root: Root, line_index: &LineIndex, delta_encoder: &mut DeltaEncoder, tokens: &mut Vec<SemanticToken>) {
+    for module_item in root.module_items() {
+        match module_item.kind() {
+            ModuleItemKind::FunctionDefinition(function_definition) => {
+                visit_function_definition(function_definition, line_index, delta_encoder, tokens);
+            },
+            ModuleItemKind::StructDefinition(struct_definition) => {
+                visit_struct_definition(struct_definition, line_index, delta_encoder, tokens);
+            },
+        }
+    }
+}
+
+fn visit_function_definition(function_definition: FunctionDefinition, line_index: &LineIndex, delta_encoder: &mut DeltaEncoder, tokens: &mut Vec<SemanticToken>) {
+    if let Some(keyword) = function_definition.syntax().first_token() {
+        let range = line_index.find_range(keyword.text_range());
+        tokens.push(delta_encoder.create_next(range, 1, 0));
+    }
+
+    if let Some(identifier) = function_definition.identifier() {
+        let syntax = identifier.syntax();
+        let range = line_index.find_range(syntax.text_range());
+        tokens.push(delta_encoder.create_next(range, 2, 0));
+    }
+}
+
+fn visit_struct_definition(struct_definition: StructDefinition, line_index: &LineIndex, delta_encoder: &mut DeltaEncoder, tokens: &mut Vec<SemanticToken>) {
+    if let Some(keyword) = struct_definition.syntax().first_token() {
+        let range = line_index.find_range(keyword.text_range());
+        tokens.push(delta_encoder.create_next(range, 1, 0));
+    }
+
+    if let Some(identifier) = struct_definition.identifier() {
+        let syntax = identifier.syntax();
+        let range = line_index.find_range(syntax.text_range());
+        tokens.push(delta_encoder.create_next(range, 3, 0));
+    }
 }

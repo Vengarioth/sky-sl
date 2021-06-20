@@ -8,11 +8,20 @@ pub use syntax::*;
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
+    use std::{borrow::Borrow, str::FromStr};
     use camino::*;
     use super::*;
     use std::sync::Arc;
     use crate::syn::ast::*;
+    use crate::syn::Parse;
+
+    #[test]
+    fn it_is_send() {
+        let db = CompilerDatabase::default();
+        std::thread::spawn(move || {
+            db.borrow();
+        });
+    }
 
     #[test]
     fn it_works() {
@@ -23,7 +32,8 @@ mod tests {
         db.set_input_file(path.clone(), Arc::from(input));
         db.ast(path.clone());
 
-        let ast: Arc<Root> = db.ast(path.clone());
+        let ast: Parse<Root> = db.ast(path.clone());
+        let ast = ast.tree();
         
         for item in ast.module_items() {
             dbg!(item);

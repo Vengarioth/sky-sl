@@ -1,4 +1,4 @@
-use crate::{lexer::Token, syn::cst::*};
+use crate::{lexer::Token, syn::cst::*, syn::Parse, syn::ast::Root};
 use super::{ParseError, ErrorKind};
 
 #[derive(Debug)]
@@ -47,7 +47,7 @@ impl<'a> Parser<'a> {
         self.emit_token(kind, current_str);
     }
 
-    pub fn recover(&mut self, recover_points: &[SyntaxKind]) {
+    pub fn recover(&mut self, _recover_points: &[SyntaxKind]) {
     }
 
     pub fn eof(&self) -> bool {
@@ -74,7 +74,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn finish(self) -> ParseResult {
-        let root = SyntaxNode::new_root(self.builder.finish());
+        let root = Parse::new(self.builder.finish());
         let errors = self.errors;
 
         ParseResult {
@@ -86,6 +86,6 @@ impl<'a> Parser<'a> {
 
 #[derive(Debug)]
 pub struct ParseResult {
-    pub root: SyntaxNode,
+    pub root: Parse<Root>,
     pub errors: Vec<ParseError>,
 }

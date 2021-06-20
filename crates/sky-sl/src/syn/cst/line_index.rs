@@ -1,4 +1,10 @@
-use rowan::TextSize;
+use rowan::{TextSize, TextRange};
+
+#[derive(Debug)]
+pub struct LineTextRange {
+    pub start: TextPosition,
+    pub end: TextPosition,
+}
 
 #[derive(Debug)]
 pub struct TextPosition {
@@ -6,7 +12,7 @@ pub struct TextPosition {
     pub column: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct LineIndex {
     newlines: Vec<TextSize>,
 }
@@ -34,6 +40,13 @@ impl LineIndex {
 
         Self {
             newlines,
+        }
+    }
+
+    pub fn find_range(&self, range: TextRange) -> LineTextRange {
+        LineTextRange {
+            start: self.find_position(range.start()),
+            end: self.find_position(range.end()),
         }
     }
 

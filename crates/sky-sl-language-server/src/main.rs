@@ -1,18 +1,20 @@
-use std::str::FromStr;
-
+use camino::Utf8PathBuf;
 use serde_json::Value;
-use sky_sl::workspace::Workspace;
+use sky_sl::syn::ast::*;
 use tower_lsp::jsonrpc::*;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use camino::Utf8PathBuf;
+use std::sync::Arc;
+
 
 mod semantics;
+mod workspaces;
 
-#[derive(Debug)]
+use workspaces::Workspaces;
+
 struct Backend {
     client: Client,
-    workspaces: Vec<Workspace>,
+    workspaces: Workspaces,
 }
 
 #[tower_lsp::async_trait]
@@ -42,57 +44,128 @@ impl LanguageServer for Backend {
                     file_operations: None,
                 }),
                 document_symbol_provider: Some(OneOf::Left(true)),
-                semantic_tokens_provider: Some(SemanticTokensServerCapabilities::SemanticTokensOptions(SemanticTokensOptions {
-                    legend: SemanticTokensLegend {
-                        token_types: vec![SemanticTokenType::STRUCT, SemanticTokenType::FUNCTION],
-                        token_modifiers: vec![SemanticTokenModifier::DOCUMENTATION, SemanticTokenModifier::DECLARATION],
-                    },
-                    full: Some(SemanticTokensFullOptions::Bool(true)),
-                    range: None,
-                    work_done_progress_options: Default::default(),
-                })),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: semantics::get_legend(),
+                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            range: None,
+                            work_done_progress_options: Default::default(),
+                        },
+                    ),
+                ),
                 ..ServerCapabilities::default()
             },
         })
     }
 
-    async fn initialized(&self, params: InitializedParams) {
-        dbg!(params);
+    async fn initialized(&self, _params: InitializedParams) {
         self.client
             .log_message(MessageType::Info, "initialized!")
             .await;
     }
 
-    async fn document_symbol(&self, params: DocumentSymbolParams) -> Result<Option<DocumentSymbolResponse>> {
-        dbg!(&params);
-
+    async fn document_symbol(
+        &self,
+        params: DocumentSymbolParams,
+    ) -> Result<Option<DocumentSymbolResponse>> {
         let path = url_to_path(&params.text_document.uri)?;
-        let workspace = Workspace::new(path.clone());
-        let result = workspace.document_symbols(path.clone()).unwrap();
-        let line_index = workspace.get_line_index(path).unwrap();
+        let workspace = self.workspaces.find_or_create(&path).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let file_path = path.strip_prefix(workspace.package_root()).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
 
-        let symbols = to_document_symbols(result.root, &line_index);
+        let mut symbols = Vec::new();
+        let ast = workspace.ast(&file_path).unwrap().tree();
+        let line_index = workspace.line_index(&file_path).unwrap();
+
+        for struct_definition in ast.struct_definitions() {
+            let syntax = struct_definition.syntax();
+            let range = syntax.text_range();
+            let start = line_index.find_position(range.start());
+            let end = line_index.find_position(range.end());
+            let range = Range::new(
+                Position::new(start.line, start.column),
+                Position::new(end.line, end.column),
+            );
+
+            let selection_range = struct_definition.identifier().unwrap().syntax().text_range();
+            let start = line_index.find_position(selection_range.start());
+            let end = line_index.find_position(selection_range.end());
+            let selection_range = Range::new(
+                Position::new(start.line, start.column),
+                Position::new(end.line, end.column),
+            );
+
+            #[allow(deprecated)]
+            let symbol = DocumentSymbol {
+                name: struct_definition.identifier().unwrap().syntax().to_string(),
+                detail: None,
+                kind: SymbolKind::Struct,
+                tags: None,
+                range,
+                selection_range,
+                children: None,
+                deprecated: None,
+            };
+            symbols.push(symbol);
+        }
+
+        for fn_definition in ast.function_definitions() {
+            let syntax = fn_definition.syntax();
+            let range = syntax.text_range();
+            let start = line_index.find_position(range.start());
+            let end = line_index.find_position(range.end());
+            let range = Range::new(
+                Position::new(start.line, start.column),
+                Position::new(end.line, end.column),
+            );
+
+            let selection_range = fn_definition.identifier().unwrap().syntax().text_range();
+            let start = line_index.find_position(selection_range.start());
+            let end = line_index.find_position(selection_range.end());
+            let selection_range = Range::new(
+                Position::new(start.line, start.column),
+                Position::new(end.line, end.column),
+            );
+
+            #[allow(deprecated)]
+            let symbol = DocumentSymbol {
+                name: fn_definition.identifier().unwrap().syntax().to_string(),
+                detail: None,
+                kind: SymbolKind::Function,
+                tags: None,
+                range,
+                selection_range,
+                children: None,
+                deprecated: None,
+            };
+            symbols.push(symbol);
+        }
 
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
 
-    async fn semantic_tokens_full(&self, params: SemanticTokensParams) -> Result<Option<SemanticTokensResult>> {
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
         // See https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide
         let path = url_to_path(&params.text_document.uri)?;
-        let semantic_tokens = get_semantic_symbols(path);
+        let workspace = self.workspaces.find_or_create(&path).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let file_path = path.strip_prefix(workspace.package_root()).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
 
-        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
-            result_id: None,
-            data: semantic_tokens,
-        })))
+        let root = workspace.ast(&file_path).unwrap().tree();
+        let line_index = workspace.line_index(&file_path).unwrap();
+
+        let semantic_tokens = semantics::get_semantic_tokens(root, &line_index);
+
+        Ok(Some(SemanticTokensResult::Tokens(semantic_tokens)))
     }
 
     async fn shutdown(&self) -> Result<()> {
         Ok(())
     }
 
-    async fn did_change_workspace_folders(&self, params: DidChangeWorkspaceFoldersParams) {
-        dbg!(params);
+    async fn did_change_workspace_folders(&self, _params: DidChangeWorkspaceFoldersParams) {
         self.client
             .log_message(MessageType::Info, "workspace folders changed!")
             .await;
@@ -125,22 +198,18 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        dbg!(&params);
-        match Utf8PathBuf::from_str(&params.text_document.uri.path()) {
-            Err(e) => self.client.log_message(MessageType::Error, format!("Could not handle path: {}", e)).await,
-            Ok(path) => {
-                dbg!(path);
-            },
-        }
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        let mut workspace = self.workspaces.find_or_create(&path).unwrap();
+        let file_path = path.strip_prefix(workspace.package_root()).unwrap();
+
+        workspace.update_file(file_path.into(), Arc::new(params.text_document.text.to_string()));
 
         self.client
             .log_message(MessageType::Info, "file opened!")
             .await;
     }
 
-    async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        dbg!(params);
-
+    async fn did_change(&self, _params: DidChangeTextDocumentParams) {
         self.client
             .log_message(MessageType::Info, "file changed!")
             .await;
@@ -152,8 +221,7 @@ impl LanguageServer for Backend {
             .await;
     }
 
-    async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        dbg!(&params);
+    async fn did_close(&self, _params: DidCloseTextDocumentParams) {
         self.client
             .log_message(MessageType::Info, "file closed!")
             .await;
@@ -174,7 +242,7 @@ async fn main() {
 
     let (service, messages) = LspService::new(|client| Backend {
         client,
-        workspaces: Vec::new(),
+        workspaces: Workspaces::new(),
     });
     Server::new(stdin, stdout)
         .interleave(messages)
@@ -194,162 +262,4 @@ fn url_to_path(url: &Url) -> Result<Utf8PathBuf> {
         message: "Cannot convert Url to Path".to_string(),
         data: None,
     })
-}
-
-fn get_semantic_symbols(path: Utf8PathBuf) -> Vec<SemanticToken> {
-    use sky_sl::syn::cst::*;
-
-    let workspace = sky_sl::workspace::Workspace::new(path.clone());
-    let result = workspace.document_symbols(path.clone()).unwrap();
-    let line_index = workspace.get_line_index(path).unwrap();
-    let mut semantic_tokens = Vec::new();
-    for event in result.root.preorder_with_tokens() {
-        match event {
-            WalkEvent::Enter(element) => {
-                match element {
-                    SyntaxElement::Node(_) => {
-                    },
-                    SyntaxElement::Token(token) => {
-                        let range = token.text_range();
-                        let start = line_index.find_position(range.start());
-
-                        semantic_tokens.push(SemanticToken {
-                            delta_line: start.line,
-                            delta_start: start.column,
-                            length: range.len().into(),
-                            token_type: 0,
-                            token_modifiers_bitset: 0,
-                        });
-
-                    },
-                }
-            },
-            WalkEvent::Leave(_) => {
-
-            },
-        }
-    }
-
-    semantic_tokens
-}
-
-fn to_document_symbols(node: sky_sl::syn::cst::SyntaxNode, line_index: &sky_sl::syn::cst::LineIndex) -> Vec<DocumentSymbol> {
-    use sky_sl::syn::cst::*;
-    // TODO refactor to use AST
-    
-    let mut stack: Vec<Vec<DocumentSymbol>> = Vec::new();
-    stack.push(Vec::new());
-
-    for event in node.preorder_with_tokens() {
-        match event {
-            WalkEvent::Enter(element) => {
-                match element {
-                    SyntaxElement::Node(_) => {
-                        stack.push(Vec::new());
-                    },
-                    SyntaxElement::Token(token) => {
-                        let range = token.text_range();
-                        let start = line_index.find_position(range.start());
-                        let end = line_index.find_position(range.end());
-                        let range = Range::new(
-                            Position::new(start.line, start.column),
-                            Position::new(end.line, end.column),
-                        );
-                        
-                        #[allow(deprecated)]
-                        let symbol = DocumentSymbol {
-                            name: "Token".to_string(),
-                            detail: None,
-                            kind: convert_syntax_kind(token.kind()),
-                            tags: None,
-                            range: range,
-                            selection_range: range,
-                            children: None,
-                            deprecated: None,
-                        };
-
-                        stack.last_mut().map(|symbols| symbols.push(symbol));
-                    },
-                }
-            },
-            WalkEvent::Leave(element) => {
-                match element {
-                    SyntaxElement::Node(node) => {
-                        let range = node.text_range();
-                        let start = line_index.find_position(range.start());
-                        let end = line_index.find_position(range.end());
-                        let range = Range::new(
-                            Position::new(start.line, start.column),
-                            Position::new(end.line, end.column),
-                        );
-
-                        let children = stack.pop().unwrap();
-
-                        #[allow(deprecated)]
-                        let symbol = DocumentSymbol {
-                            name: "Token".to_string(),
-                            detail: None,
-                            kind: convert_syntax_kind(node.kind()),
-                            tags: None,
-                            range: range,
-                            selection_range: range,
-                            children: Some(children),
-                            deprecated: None,
-                        };
-
-                        stack.last_mut().map(|symbols| symbols.push(symbol));
-                    },
-                    SyntaxElement::Token(_) => {},
-                }
-            },
-        }
-    }
-
-    stack.pop().unwrap()
-}
-
-fn convert_syntax_kind(syntax_kind: sky_sl::syn::cst::SyntaxKind) -> SymbolKind {
-    use sky_sl::syn::cst::SyntaxKind;
-
-    match syntax_kind {
-        SyntaxKind::Module => SymbolKind::Module,
-        SyntaxKind::Struct => SymbolKind::Struct,
-        SyntaxKind::Fn => SymbolKind::Function,
-        SyntaxKind::ArgumentList => SymbolKind::Unknown,
-        SyntaxKind::Argument => SymbolKind::Unknown,
-        SyntaxKind::StructKeyword => SymbolKind::Struct,
-        SyntaxKind::FnKeyword => SymbolKind::Function,
-        SyntaxKind::Identifier => SymbolKind::Unknown,
-        SyntaxKind::Whitespace => SymbolKind::Unknown,
-        SyntaxKind::Comment => SymbolKind::Unknown,
-        SyntaxKind::NumLiteral => SymbolKind::Number,
-        SyntaxKind::Semicolon => SymbolKind::Unknown,
-        SyntaxKind::Comma => SymbolKind::Unknown,
-        SyntaxKind::Dot => SymbolKind::Unknown,
-        SyntaxKind::OpenParen => SymbolKind::Unknown,
-        SyntaxKind::CloseParen => SymbolKind::Unknown,
-        SyntaxKind::OpenBrace => SymbolKind::Unknown,
-        SyntaxKind::CloseBrace => SymbolKind::Unknown,
-        SyntaxKind::OpenBracket => SymbolKind::Unknown,
-        SyntaxKind::CloseBracket => SymbolKind::Unknown,
-        SyntaxKind::At => SymbolKind::Unknown,
-        SyntaxKind::Pound => SymbolKind::Unknown,
-        SyntaxKind::Tilde => SymbolKind::Unknown,
-        SyntaxKind::Question => SymbolKind::Unknown,
-        SyntaxKind::Colon => SymbolKind::Unknown,
-        SyntaxKind::Dollar => SymbolKind::Unknown,
-        SyntaxKind::Equals => SymbolKind::Unknown,
-        SyntaxKind::Bang => SymbolKind::Unknown,
-        SyntaxKind::LessThan => SymbolKind::Unknown,
-        SyntaxKind::GreatherThan => SymbolKind::Unknown,
-        SyntaxKind::Minus => SymbolKind::Unknown,
-        SyntaxKind::And => SymbolKind::Unknown,
-        SyntaxKind::VerticalBar => SymbolKind::Unknown,
-        SyntaxKind::Plus => SymbolKind::Unknown,
-        SyntaxKind::Star => SymbolKind::Unknown,
-        SyntaxKind::Slash => SymbolKind::Unknown,
-        SyntaxKind::Caret => SymbolKind::Unknown,
-        SyntaxKind::Percent => SymbolKind::Unknown,
-        SyntaxKind::Error => SymbolKind::Unknown,
-    }
 }
