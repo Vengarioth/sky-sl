@@ -1,4 +1,5 @@
 use crate::syn::cst::SyntaxKind;
+use thiserror::*;
 
 #[derive(Debug)]
 pub enum ErrorKind {
@@ -7,7 +8,13 @@ pub enum ErrorKind {
 }
 
 #[derive(Debug)]
-pub struct ParseError {
+pub struct SyntaxError {
     pub offset: usize,
     pub kind: ErrorKind,
+}
+
+#[derive(Debug, Error)]
+pub enum ParseError {
+    #[error("Unexpected end of file")]
+    EOF,
 }

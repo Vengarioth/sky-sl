@@ -24,7 +24,7 @@ impl LanguageServer for Backend {
             server_info: None,
             capabilities: ServerCapabilities {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::Incremental,
+                    TextDocumentSyncKind::Full,
                 )),
                 completion_provider: Some(CompletionOptions {
                     resolve_provider: Some(false),
@@ -119,26 +119,28 @@ impl LanguageServer for Backend {
                 Position::new(end.line, end.column),
             );
 
-            let selection_range = fn_definition.identifier().unwrap().syntax().text_range();
-            let start = line_index.find_position(selection_range.start());
-            let end = line_index.find_position(selection_range.end());
-            let selection_range = Range::new(
-                Position::new(start.line, start.column),
-                Position::new(end.line, end.column),
-            );
-
-            #[allow(deprecated)]
-            let symbol = DocumentSymbol {
-                name: fn_definition.identifier().unwrap().syntax().to_string(),
-                detail: None,
-                kind: SymbolKind::Function,
-                tags: None,
-                range,
-                selection_range,
-                children: None,
-                deprecated: None,
-            };
-            symbols.push(symbol);
+            if let Some(identifier) = fn_definition.identifier() {
+                let selection_range = identifier.syntax().text_range();
+                let start = line_index.find_position(selection_range.start());
+                let end = line_index.find_position(selection_range.end());
+                let selection_range = Range::new(
+                    Position::new(start.line, start.column),
+                    Position::new(end.line, end.column),
+                );
+    
+                #[allow(deprecated)]
+                let symbol = DocumentSymbol {
+                    name: fn_definition.identifier().unwrap().syntax().to_string(),
+                    detail: None,
+                    kind: SymbolKind::Function,
+                    tags: None,
+                    range,
+                    selection_range,
+                    children: None,
+                    deprecated: None,
+                };
+                symbols.push(symbol);
+            }
         }
 
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
@@ -209,7 +211,15 @@ impl LanguageServer for Backend {
             .await;
     }
 
-    async fn did_change(&self, _params: DidChangeTextDocumentParams) {
+    async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        let mut workspace = self.workspaces.find_or_create(&path).unwrap();
+        let file_path = path.strip_prefix(workspace.package_root()).unwrap();
+
+        dbg!(&params.content_changes);
+
+        workspace.update_file(file_path.into(), Arc::new(params.content_changes[0].text.to_string()));
+
         self.client
             .log_message(MessageType::Info, "file changed!")
             .await;

@@ -1,12 +1,12 @@
 use crate::{lexer::Token, syn::cst::*, syn::Parse, syn::ast::Root};
-use super::{ParseError, ErrorKind};
+use super::{SyntaxError, ErrorKind, ParseError};
 
 #[derive(Debug)]
 pub struct Parser<'a> {
     builder: Builder<'a>,
     token: &'a [Token],
     input: &'a str,
-    errors: Vec<ParseError>,
+    errors: Vec<SyntaxError>,
     offset: usize,
 }
 
@@ -21,21 +21,32 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn is_at(&self, kind: SyntaxKind) -> bool {
-        self.current() == kind
+    pub fn is_at(&self, kind: SyntaxKind) -> Result<bool, ParseError> {
+        let current = self.current()?;
+        Ok(current == kind)
     }
 
-    pub fn current(&self) -> SyntaxKind {
-        self.token[0].kind()
-    }
-
-    pub fn bump_if(&mut self, kind: SyntaxKind) {
-        if self.is_at(kind) {
-            self.bump();
+    pub fn current(&self) -> Result<SyntaxKind, ParseError> {
+        if self.eof() {
+            return Err(ParseError::EOF);
         }
+
+        Ok(self.token[0].kind())
     }
 
-    pub fn bump(&mut self) {
+    pub fn bump_if(&mut self, kind: SyntaxKind) -> Result<(), ParseError> {
+        if self.is_at(kind)? {
+            self.bump()?;
+        }
+
+        Ok(())
+    }
+
+    pub fn bump(&mut self) -> Result<(), ParseError> {
+        if self.eof() {
+            return Err(ParseError::EOF);
+        }
+
         let kind = self.token[0].kind();
         let length = self.token[0].len();
 
@@ -45,6 +56,7 @@ impl<'a> Parser<'a> {
         self.offset += length;
 
         self.emit_token(kind, current_str);
+        Ok(())
     }
 
     pub fn recover(&mut self, _recover_points: &[SyntaxKind]) {
@@ -62,12 +74,22 @@ impl<'a> Parser<'a> {
         self.builder.finish_node();
     }
 
+    pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self) -> Result<(), ParseError>) -> Result<(), ParseError> {
+        self.begin_node(kind);
+
+        let r = f(self);
+
+        self.end_node();
+
+        r
+    }
+
     pub fn emit_token(&mut self, kind: SyntaxKind, text: &str) {
         self.builder.token(kind.into(), text);
     }
 
     pub fn emit_error(&mut self, kind: ErrorKind) {
-        self.errors.push(ParseError {
+        self.errors.push(SyntaxError {
             offset: self.offset,
             kind,
         });
@@ -87,5 +109,5 @@ impl<'a> Parser<'a> {
 #[derive(Debug)]
 pub struct ParseResult {
     pub root: Parse<Root>,
-    pub errors: Vec<ParseError>,
+    pub errors: Vec<SyntaxError>,
 }
