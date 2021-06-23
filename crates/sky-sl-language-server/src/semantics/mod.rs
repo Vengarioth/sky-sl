@@ -19,6 +19,8 @@ pub fn get_legend() -> SemanticTokensLegend {
 pub fn get_semantic_tokens(root: Root, line_index: &LineIndex) -> SemanticTokens {
     let mut builder = SemanticTokensBuilder::new(line_index);
 
+    dbg!(&root);
+
     visit_root(root, &mut builder);
 
     SemanticTokens {
@@ -48,6 +50,18 @@ fn visit_function_definition(function_definition: FunctionDefinition, builder: &
     if let Some(identifier) = function_definition.identifier() {
         let syntax = identifier.syntax();
         builder.build_token(syntax.text_range(), 2, 1);
+    }
+
+    if let Some(argument_list) = function_definition.argument_list() {
+        visit_argument_list(argument_list, builder)
+    }
+}
+
+fn visit_argument_list(argument_list: ArgumentList, builder: &mut SemanticTokensBuilder) {
+    for argument in argument_list.arguments() {
+        if let Some(identifier) = argument.identifier() {
+            builder.build_token(identifier.syntax().text_range(), 4, 0);
+        }
     }
 }
 

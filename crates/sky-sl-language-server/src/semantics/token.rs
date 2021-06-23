@@ -7,14 +7,14 @@ pub const STRUCT: SemanticTokenType = SemanticTokenType::new("struct");
 pub const PARAMETER: SemanticTokenType = SemanticTokenType::new("parameter");
 
 // scopes: (), {}, []
-pub const PARENTHESES: SemanticTokenType = SemanticTokenType::new("parentheses");
-pub const BRACE: SemanticTokenType = SemanticTokenType::new("brace");
-pub const BRACKET: SemanticTokenType = SemanticTokenType::new("bracket");
+// pub const PARENTHESES: SemanticTokenType = SemanticTokenType::new("parentheses");
+// pub const BRACE: SemanticTokenType = SemanticTokenType::new("brace");
+// pub const BRACKET: SemanticTokenType = SemanticTokenType::new("bracket");
 
 // punctuation
-pub const COLON: SemanticTokenType = SemanticTokenType::new("colon");
+// pub const COLON: SemanticTokenType = SemanticTokenType::new("colon");
 
-pub const OPERATOR: SemanticTokenType = SemanticTokenType::new("operator");
+// pub const OPERATOR: SemanticTokenType = SemanticTokenType::new("operator");
 
 // unused
 // pub const TYPE: SemanticTokenType = SemanticTokenType::new("type");
@@ -41,10 +41,10 @@ pub fn get_semantic_token_types() -> Vec<SemanticTokenType> {
         FUNCTION,
         STRUCT,
         PARAMETER,
-        PARENTHESES,
-        BRACE,
-        BRACKET,
-        COLON,
-        OPERATOR,
+        // PARENTHESES,
+        // BRACE,
+        // BRACKET,
+        // COLON,
+        // OPERATOR,
     ]
 }

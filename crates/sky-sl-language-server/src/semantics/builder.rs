@@ -4,6 +4,7 @@ use tower_lsp::lsp_types::*;
 pub struct SemanticTokensBuilder<'a> {
     line_index: &'a LineIndex,
     line: u32,
+    offset: u32,
     tokens: Vec<SemanticToken>,
 }
 
@@ -12,6 +13,7 @@ impl<'a> SemanticTokensBuilder<'a> {
         Self {
             line_index,
             line: 0,
+            offset: 0,
             tokens: Vec::new(),
         }
     }
@@ -19,12 +21,19 @@ impl<'a> SemanticTokensBuilder<'a> {
     pub fn build_token(&mut self, range: TextRange, token_type: u32, token_modifiers_bitset: u32) {
         let range = self.line_index.find_range(range);
         let delta_line = range.start.line - self.line;
-        let delta_start = range.start.column;
+
+        if range.start.line != self.line {
+            dbg!("reset on new line");
+            self.offset = 0;
+        }
+
+        let delta_start = range.start.column - self.offset;
 
         debug_assert!(range.start.line == range.end.line);
         let length = range.end.column - range.start.column;
 
         self.line = range.start.line;
+        self.offset = range.start.column;
 
         self.tokens.push(SemanticToken {
             delta_line,

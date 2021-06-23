@@ -1,5 +1,5 @@
 use crate::syn::cst::*;
-use super::{AstNode, AstChildren};
+use super::{AstNode, AstChildren, IdentifierOwner};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ArgumentList {
@@ -46,6 +46,8 @@ impl AstNode for Argument {
         &self.syntax
     }
 }
+
+impl IdentifierOwner for Argument {}
 
 pub trait ArgumentsOwner: AstNode {
     fn arguments(&self) -> AstChildren<Argument> {

@@ -1,11 +1,10 @@
 use camino::Utf8PathBuf;
 use serde_json::Value;
 use sky_sl::syn::ast::*;
+use std::sync::Arc;
 use tower_lsp::jsonrpc::*;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
-use std::sync::Arc;
-
 
 mod semantics;
 mod workspaces;
@@ -48,7 +47,7 @@ impl LanguageServer for Backend {
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
                             legend: semantics::get_legend(),
-                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
                             range: None,
                             work_done_progress_options: Default::default(),
                         },
@@ -70,8 +69,13 @@ impl LanguageServer for Backend {
         params: DocumentSymbolParams,
     ) -> Result<Option<DocumentSymbolResponse>> {
         let path = url_to_path(&params.text_document.uri)?;
-        let workspace = self.workspaces.find_or_create(&path).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-        let file_path = path.strip_prefix(workspace.package_root()).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let workspace = self
+            .workspaces
+            .find_or_create(&path)
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let file_path = path
+            .strip_prefix(workspace.package_root())
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
 
         let mut symbols = Vec::new();
         let ast = workspace.ast(&file_path).unwrap().tree();
@@ -95,7 +99,7 @@ impl LanguageServer for Backend {
                     Position::new(start.line, start.column),
                     Position::new(end.line, end.column),
                 );
-    
+
                 #[allow(deprecated)]
                 let symbol = DocumentSymbol {
                     name: identifier.syntax().to_string(),
@@ -129,7 +133,7 @@ impl LanguageServer for Backend {
                     Position::new(start.line, start.column),
                     Position::new(end.line, end.column),
                 );
-    
+
                 #[allow(deprecated)]
                 let symbol = DocumentSymbol {
                     name: identifier.syntax().to_string(),
@@ -145,8 +149,6 @@ impl LanguageServer for Backend {
             }
         }
 
-        dbg!(&symbols);
-
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
 
@@ -156,13 +158,20 @@ impl LanguageServer for Backend {
     ) -> Result<Option<SemanticTokensResult>> {
         // See https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide
         let path = url_to_path(&params.text_document.uri)?;
-        let workspace = self.workspaces.find_or_create(&path).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-        let file_path = path.strip_prefix(workspace.package_root()).map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let workspace = self
+            .workspaces
+            .find_or_create(&path)
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let file_path = path
+            .strip_prefix(workspace.package_root())
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
 
         let root = workspace.ast(&file_path).unwrap().tree();
         let line_index = workspace.line_index(&file_path).unwrap();
 
         let semantic_tokens = semantics::get_semantic_tokens(root, &line_index);
+
+        dbg!(&semantic_tokens);
 
         Ok(Some(SemanticTokensResult::Tokens(semantic_tokens)))
     }
@@ -208,7 +217,10 @@ impl LanguageServer for Backend {
         let mut workspace = self.workspaces.find_or_create(&path).unwrap();
         let file_path = path.strip_prefix(workspace.package_root()).unwrap();
 
-        workspace.update_file(file_path.into(), Arc::new(params.text_document.text.to_string()));
+        workspace.update_file(
+            file_path.into(),
+            Arc::new(params.text_document.text.to_string()),
+        );
 
         self.client
             .log_message(MessageType::Info, "file opened!")
@@ -223,20 +235,25 @@ impl LanguageServer for Backend {
         let mut workspace = self.workspaces.find_or_create(&path).unwrap();
         let file_path = path.strip_prefix(workspace.package_root()).unwrap();
 
-        workspace.update_file(file_path.into(), Arc::new(params.content_changes[0].text.to_string()));
+        workspace.update_file(
+            file_path.into(),
+            Arc::new(params.content_changes[0].text.to_string()),
+        );
 
         let ast = workspace.ast(file_path.into()).unwrap();
         let line_index = workspace.line_index(file_path.into()).unwrap();
 
         let mut diagnostics = Vec::new();
         for error in ast.errors() {
-
             dbg!(error);
             let start = line_index.find_position((error.offset as u32).into());
             let end = line_index.find_position(((error.offset + error.length) as u32).into());
 
             diagnostics.push(Diagnostic::new(
-                Range::new(Position::new(start.line, start.column), Position::new(end.line, end.column)),
+                Range::new(
+                    Position::new(start.line, start.column),
+                    Position::new(end.line, end.column),
+                ),
                 Some(DiagnosticSeverity::Error),
                 Some(NumberOrString::Number(0)),
                 Some(" ".to_string()),
@@ -246,8 +263,9 @@ impl LanguageServer for Backend {
             ));
         }
 
-
-        self.client.publish_diagnostics(uri, diagnostics, Some(version)).await;
+        self.client
+            .publish_diagnostics(uri, diagnostics, Some(version))
+            .await;
 
         self.client
             .log_message(MessageType::Info, "file changed!")

@@ -40,6 +40,13 @@ fn parse_item(parser: &mut Parser) -> Result<(), ParseError> {
     })
 }
 
+/// Parses a struct item
+///
+/// ```
+/// struct Example {
+///     member: MemberType,
+/// }
+/// ```
 fn parse_struct(parser: &mut Parser) -> Result<(), ParseError> {
     parser.node(SyntaxKind::Struct, |parser| {
         parser.bump()?;
@@ -54,7 +61,7 @@ fn parse_struct(parser: &mut Parser) -> Result<(), ParseError> {
             parser.bump()?;
         }
 
-        // TODO parse member
+        parse_member_list(parser)?;
 
         parser.bump_if(SyntaxKind::Whitespace)?;
         if !parser.is_at(SyntaxKind::CloseBrace)? {
@@ -67,6 +74,54 @@ fn parse_struct(parser: &mut Parser) -> Result<(), ParseError> {
     })
 }
 
+/// Parses a list of struct members
+/// ```
+/// member: MemberType,
+/// second_member: SecondMemberType,
+/// ```
+fn parse_member_list(parser: &mut Parser) -> Result<(), ParseError> {
+    parser.node(SyntaxKind::MemberList, |parser| {
+        loop {
+            parser.bump_if(SyntaxKind::Whitespace)?;
+
+            if !parser.is_at(SyntaxKind::Identifier)? {
+                break;
+            }
+
+            parse_member(parser)?;
+
+            parser.bump_if(SyntaxKind::Whitespace)?;
+            parser.bump_if(SyntaxKind::Comma)?;
+        }
+
+        Ok(())
+    })
+}
+
+/// Parses a single member of a struct
+/// ```
+/// member: MemberType
+/// ```
+fn parse_member(parser: &mut Parser) -> Result<(), ParseError> {
+    parser.node(SyntaxKind::Member, |parser| {
+        parse_identifier(parser)?;
+
+        parser.bump_if(SyntaxKind::Whitespace)?;
+        parser.bump_if(SyntaxKind::Colon)?;
+
+        parser.bump_if(SyntaxKind::Whitespace)?;
+        // TODO proper type identifier
+        parser.bump_if(SyntaxKind::Identifier)?;
+        Ok(())
+    })
+}
+
+/// Parses a function item
+/// ```
+/// fn example() {
+///     
+/// }
+/// ```
 fn parse_function(parser: &mut Parser) -> Result<(), ParseError> {
     parser.node(SyntaxKind::Fn, |parser| {
         parser.bump()?;
@@ -109,6 +164,10 @@ fn parse_function(parser: &mut Parser) -> Result<(), ParseError> {
     })
 }
 
+/// Parses a list of arguments, excluding parentheses, separated by comma (allows trailing comma)
+/// ```
+/// one: One, two: Two
+/// ```
 fn parse_arguments(parser: &mut Parser) -> Result<(), ParseError> {
     parser.node(SyntaxKind::ArgumentList, |parser| {
         loop {
@@ -128,9 +187,13 @@ fn parse_arguments(parser: &mut Parser) -> Result<(), ParseError> {
     })
 }
 
+/// Parses a single argument
+/// ```
+/// one: One
+/// ```
 fn parse_argument(parser: &mut Parser) -> Result<(), ParseError> {
     parser.node(SyntaxKind::Argument, |parser| {
-        parser.bump()?;
+        parse_identifier(parser)?;
 
         parser.bump_if(SyntaxKind::Whitespace)?;
         parser.bump_if(SyntaxKind::Colon)?;
@@ -142,6 +205,7 @@ fn parse_argument(parser: &mut Parser) -> Result<(), ParseError> {
     })
 }
 
+/// Parses an identifier
 fn parse_identifier(parser: &mut Parser) -> Result<(), ParseError> {
     parser.bump_if(SyntaxKind::Whitespace)?;
 

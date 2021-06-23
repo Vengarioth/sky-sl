@@ -6,8 +6,10 @@ use std::sync::{Arc, Mutex};
 
 mod fs;
 mod error;
+mod package;
 
 pub use error::*;
+pub use package::*;
 
 struct Inner {
     root: Utf8PathBuf,

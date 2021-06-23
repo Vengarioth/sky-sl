@@ -8,6 +8,12 @@ pub enum SyntaxKind {
     /// A struct
     Struct,
 
+    /// A struct member list
+    MemberList,
+
+    /// A struct member
+    Member,
+
     /// A function
     Fn,
 
