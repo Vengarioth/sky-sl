@@ -244,8 +244,8 @@ impl LanguageServer for Backend {
         let line_index = workspace.line_index(file_path.into()).unwrap();
 
         let mut diagnostics = Vec::new();
+        
         for error in ast.errors() {
-            dbg!(error);
             let start = line_index.find_position((error.offset as u32).into());
             let end = line_index.find_position(((error.offset + error.length) as u32).into());
 

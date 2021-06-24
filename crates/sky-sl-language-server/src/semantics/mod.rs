@@ -60,7 +60,7 @@ fn visit_function_definition(function_definition: FunctionDefinition, builder: &
 fn visit_argument_list(argument_list: ArgumentList, builder: &mut SemanticTokensBuilder) {
     for argument in argument_list.arguments() {
         if let Some(identifier) = argument.identifier() {
-            builder.build_token(identifier.syntax().text_range(), 4, 0);
+            builder.build_token(identifier.syntax().text_range(), 4, 1);
         }
     }
 }

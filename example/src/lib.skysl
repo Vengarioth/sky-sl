@@ -1,1 +1,15 @@
-fn foo() {} fn bar() {} struct Foo {}
+fn foo () {
+
+}
+
+fn bar(a: A, b: B) {
+    
+}
+
+asdflkjasdflhj
+
+struct Baz {
+    a: B,    
+}
+
+fn a() {} fn b() {}
