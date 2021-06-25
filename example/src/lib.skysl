@@ -6,10 +6,12 @@ fn bar(a: A, b: B) {
     
 }
 
-asdflkjasdflhj
-
 struct Baz {
-    a: B,    
+    test: Test,
+    test_two: TestTwo,
 }
 
-fn a() {} fn b() {}
+struct Vertex {
+    position: Vec3,
+    uv: Vec2,
+}

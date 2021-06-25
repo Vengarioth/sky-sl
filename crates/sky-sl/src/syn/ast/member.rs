@@ -2,13 +2,13 @@ use crate::syn::cst::*;
 use super::{AstNode, AstChildren, IdentifierOwner};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ArgumentList {
+pub struct MemberList {
     syntax: SyntaxNode,
 }
 
-impl AstNode for ArgumentList {
+impl AstNode for MemberList {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::ArgumentList
+        kind == SyntaxKind::MemberList
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self> where Self: Sized {
@@ -20,22 +20,22 @@ impl AstNode for ArgumentList {
     }
 }
 
-pub trait ArgumentListOwner: AstNode {
-    fn argument_list(&self) -> Option<ArgumentList> {
+pub trait MemberListOwner: AstNode {
+    fn member_list(&self) -> Option<MemberList> {
         super::child(self)
     }
 }
 
-impl ArgumentsOwner for ArgumentList {}
+impl MemberOwner for MemberList {}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Argument {
+pub struct Member {
     syntax: SyntaxNode,
 }
 
-impl AstNode for Argument {
+impl AstNode for Member {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::Argument
+        kind == SyntaxKind::Member
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self> where Self: Sized {
@@ -47,10 +47,10 @@ impl AstNode for Argument {
     }
 }
 
-impl IdentifierOwner for Argument {}
+impl IdentifierOwner for Member {}
 
-pub trait ArgumentsOwner: AstNode {
-    fn arguments(&self) -> AstChildren<Argument> {
+pub trait MemberOwner: AstNode {
+    fn member(&self) -> AstChildren<Member> {
         super::children(self)
     }
 }

@@ -92,6 +92,34 @@ impl LanguageServer for Backend {
             );
 
             if let Some(identifier) = struct_definition.identifier() {
+                let mut children = Vec::new();
+                if let Some(member_list) = struct_definition.member_list() {
+                    for member in member_list.member() {
+                        if let Some(identifier) = member.identifier() {
+                            let selection_range = identifier.syntax().text_range();
+                            let start = line_index.find_position(selection_range.start());
+                            let end = line_index.find_position(selection_range.end());
+                            let selection_range = Range::new(
+                                Position::new(start.line, start.column),
+                                Position::new(end.line, end.column),
+                            );
+
+                            #[allow(deprecated)]
+                            let symbol = DocumentSymbol {
+                                name: identifier.syntax().to_string(),
+                                detail: None,
+                                kind: SymbolKind::Property,
+                                tags: None,
+                                range,
+                                selection_range,
+                                children: None,
+                                deprecated: None,
+                            };
+                            children.push(symbol);
+                        }
+                    }
+                }
+                
                 let selection_range = identifier.syntax().text_range();
                 let start = line_index.find_position(selection_range.start());
                 let end = line_index.find_position(selection_range.end());
@@ -108,7 +136,7 @@ impl LanguageServer for Backend {
                     tags: None,
                     range,
                     selection_range,
-                    children: None,
+                    children: Some(children),
                     deprecated: None,
                 };
                 symbols.push(symbol);
