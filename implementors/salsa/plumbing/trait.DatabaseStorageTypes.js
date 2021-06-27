@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sky_sl"] = [{"text":"impl DatabaseStorageTypes for <a class=\"struct\" href=\"sky_sl/db/struct.CompilerDatabase.html\" title=\"struct sky_sl::db::CompilerDatabase\">CompilerDatabase</a>","synthetic":false,"types":["sky_sl::db::storage::CompilerDatabase"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

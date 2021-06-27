@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sky_sl"] = [{"text":"impl <a class=\"trait\" href=\"rowan/api/trait.Language.html\" title=\"trait rowan::api::Language\">Language</a> for <a class=\"enum\" href=\"sky_sl/syn/cst/enum.Lang.html\" title=\"enum sky_sl::syn::cst::Lang\">Lang</a>","synthetic":false,"types":["sky_sl::syn::cst::Lang"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

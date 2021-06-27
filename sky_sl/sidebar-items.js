@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["db",""],["hir",""],["lexer",""],["parser",""],["syn",""],["workspace",""]]});

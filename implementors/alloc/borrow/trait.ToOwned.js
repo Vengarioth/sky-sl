@@ -1,0 +1,4 @@
+(function() {var implementors = {};
+implementors["camino"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html\" title=\"trait alloc::borrow::ToOwned\">ToOwned</a> for <a class=\"struct\" href=\"camino/struct.Utf8Path.html\" title=\"struct camino::Utf8Path\">Utf8Path</a>","synthetic":false,"types":["camino::Utf8Path"]}];
+implementors["rowan"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/alloc/borrow/trait.ToOwned.html\" title=\"trait alloc::borrow::ToOwned\">ToOwned</a> for <a class=\"struct\" href=\"rowan/struct.GreenNodeData.html\" title=\"struct rowan::GreenNodeData\">GreenNodeData</a>","synthetic":false,"types":["rowan::green::node::GreenNodeData"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

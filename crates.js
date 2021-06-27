@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["camino","cfg_if","countme","crossbeam_utils","hashbrown","heck","indexmap","instant","libc","lock_api","log","memoffset","oorandom","parking_lot","parking_lot_core","proc_macro2","quote","rowan","rustc_hash","salsa","salsa_macros","scopeguard","sky_sl","smallvec","syn","text_size","thiserror","thiserror_impl","unicode_segmentation","unicode_xid"];

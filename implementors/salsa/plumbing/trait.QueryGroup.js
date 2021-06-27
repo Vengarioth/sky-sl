@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sky_sl"] = [{"text":"impl QueryGroup for <a class=\"struct\" href=\"sky_sl/db/struct.SourceDatabaseStorage.html\" title=\"struct sky_sl::db::SourceDatabaseStorage\">SourceDatabaseStorage</a>","synthetic":false,"types":["sky_sl::db::source::SourceDatabaseStorage"]},{"text":"impl QueryGroup for <a class=\"struct\" href=\"sky_sl/db/struct.SyntaxDatabaseStorage.html\" title=\"struct sky_sl::db::SyntaxDatabaseStorage\">SyntaxDatabaseStorage</a>","synthetic":false,"types":["sky_sl::db::syntax::SyntaxDatabaseStorage"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["WorkspaceError",""]],"struct":[["AdHocPackage",""],["Workspace",""]],"trait":[["Package",""]]});

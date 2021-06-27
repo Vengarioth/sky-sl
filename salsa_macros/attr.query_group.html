@@ -1,0 +1,99 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The decorator that defines a salsa “query group” trait. This is a trait that defines everything that a block of queries need to execute, as well as defining the queries themselves that are exported for others to use."><meta name="keywords" content="rust, rustlang, rust-lang, query_group"><title>query_group in salsa_macros - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><script src="../crates.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu" role="button">&#9776;</div><a href='../salsa_macros/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><div class="sidebar-elems"><p class="location"><a href="index.html">salsa_macros</a></p><div id="sidebar-vars" data-name="query_group" data-ty="attr" data-relpath=""></div><script defer src="sidebar-items.js"></script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../brush.svg" width="18" height="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
+                <a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" height="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="in-band">Attribute Macro <a href="index.html">salsa_macros</a>::<wbr><a class="attr" href="">query_group</a><button id="copy-path" onclick="copy_path(this)">⎘</button></span><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span><a class="srclink" href="../src/salsa_macros/lib.rs.html#122-124" title="goto source code">[src]</a></span></h1><pre class="rust attr">#[query_group]</pre><div class="docblock"><p>The decorator that defines a salsa “query group” trait. This is a
+trait that defines everything that a block of queries need to
+execute, as well as defining the queries themselves that are
+exported for others to use.</p>
+<p>This macro declares the “prototype” for a group of queries. It will
+expand into a trait and a set of structs, one per query.</p>
+<p>For each query, you give the name of the accessor method to invoke
+the query (e.g., <code>my_query</code>, below), as well as its parameter
+types and the output type. You also give the name for a query type
+(e.g., <code>MyQuery</code>, below) that represents the query, and optionally
+other details, such as its storage.</p>
+<h1 id="examples" class="section-header"><a href="#examples">Examples</a></h1>
+<p>The simplest example is something like this:</p>
+
+<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore">
+<span class="attribute">#[<span class="ident">salsa::query_group</span>]</span>
+<span class="kw">trait</span> <span class="ident">TypeckDatabase</span> {
+    <span class="attribute">#[<span class="ident">salsa::input</span>]</span> <span class="comment">// see below for other legal attributes</span>
+    <span class="kw">fn</span> <span class="ident">my_query</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
+
+    <span class="doccomment">/// Queries can have any number of inputs (including zero); if there</span>
+    <span class="doccomment">/// is not exactly one input, then the key type will be</span>
+    <span class="doccomment">/// a tuple of the input types, so in this case `(u32, f32)`.</span>
+    <span class="kw">fn</span> <span class="ident">other_query</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input1</span>: <span class="ident">u32</span>, <span class="ident">input2</span>: <span class="ident">f32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
+}</pre></div>
+<p>Here is a list of legal <code>salsa::XXX</code> attributes:</p>
+<ul>
+<li>Storage attributes: control how the query data is stored and set. These
+are described in detail in the section below.
+<ul>
+<li><code>#[salsa::input]</code></li>
+<li><code>#[salsa::memoized]</code></li>
+<li><code>#[salsa::dependencies]</code></li>
+</ul>
+</li>
+<li>Query execution:
+<ul>
+<li><code>#[salsa::invoke(path::to::my_fn)]</code> – for a non-input, this
+indicates the function to call when a query must be
+recomputed. The default is to call a function in the same
+module with the same name as the query.</li>
+<li><code>#[query_type(MyQueryTypeName)]</code> specifies the name of the
+dummy struct created for the query. Default is the name of the
+query, in camel case, plus the word “Query” (e.g.,
+<code>MyQueryQuery</code> and <code>OtherQueryQuery</code> in the examples above).</li>
+</ul>
+</li>
+</ul>
+<h1 id="storage-attributes" class="section-header"><a href="#storage-attributes">Storage attributes</a></h1>
+<p>Here are the possible storage values for each query.  The default
+is <code>storage memoized</code>.</p>
+<h2 id="input-queries" class="section-header"><a href="#input-queries">Input queries</a></h2>
+<p>Specifying <code>storage input</code> will give you an <strong>input
+query</strong>. Unlike derived queries, whose value is given by a
+function, input queries are explicitly set by doing
+<code>db.query(QueryType).set(key, value)</code> (where <code>QueryType</code> is the
+<code>type</code> specified for the query). Accessing a value that has not
+yet been set will panic. Each time you invoke <code>set</code>, we assume the
+value has changed, and so we will potentially re-execute derived
+queries that read (transitively) from this input.</p>
+<h2 id="derived-queries" class="section-header"><a href="#derived-queries">Derived queries</a></h2>
+<p>Derived queries are specified by a function.</p>
+<ul>
+<li><code>#[salsa::memoized]</code> (the default) – The result is memoized
+between calls.  If the inputs have changed, we will recompute
+the value, but then compare against the old memoized value,
+which can significantly reduce the amount of recomputation
+required in new revisions. This does require that the value
+implements <code>Eq</code>.</li>
+<li><code>#[salsa::dependencies]</code> – does not cache the value, so it will
+be recomputed every time it is needed. We do track the inputs, however,
+so if they have not changed, then things that rely on this query
+may be known not to have changed.</li>
+</ul>
+<h2 id="attribute-combinations" class="section-header"><a href="#attribute-combinations">Attribute combinations</a></h2>
+<p>Some attributes are mutually exclusive. For example, it is an error to add
+multiple storage specifiers:</p>
+
+<div class='information'><div class='tooltip compile_fail'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered compile_fail">
+<span class="attribute">#[<span class="ident">salsa::query_group</span>]</span>
+<span class="kw">trait</span> <span class="ident">CodegenDatabase</span> {
+    <span class="attribute">#[<span class="ident">salsa::input</span>]</span>
+    <span class="attribute">#[<span class="ident">salsa::memoized</span>]</span>
+    <span class="kw">fn</span> <span class="ident">my_query</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
+}</pre></div>
+<p>It is also an error to annotate a function to <code>invoke</code> on an <code>input</code> query:</p>
+
+<div class='information'><div class='tooltip compile_fail'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered compile_fail">
+<span class="attribute">#[<span class="ident">salsa::query_group</span>]</span>
+<span class="kw">trait</span> <span class="ident">CodegenDatabase</span> {
+    <span class="attribute">#[<span class="ident">salsa::input</span>]</span>
+    <span class="attribute">#[<span class="ident">salsa::invoke</span>(<span class="ident">typeck::my_query</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">my_query</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span>;
+}</pre></div>
+</div></section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../" data-current-crate="salsa_macros" data-search-index-js="../search-index.js" data-search-js="../search.js"></div>
+    <script src="../main.js"></script></body></html>
