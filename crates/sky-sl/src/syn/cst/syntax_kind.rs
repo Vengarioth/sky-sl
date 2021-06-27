@@ -23,6 +23,24 @@ pub enum SyntaxKind {
     /// A single argument
     Argument,
 
+    /// Block
+    Block,
+
+    /// A statement belonging to a block
+    Statement,
+
+    /// An expression belonging to a statement
+    Expression,
+
+    /// A literal expression
+    LiteralExpression,
+
+    /// A binary expression with two operands
+    BinaryExpression,
+
+    /// the "let" keyword
+    LetKeyword,
+
     /// the "struct" keyword
     StructKeyword,
 
@@ -174,12 +192,25 @@ impl SyntaxKind {
         }
     }
 
+    pub fn operator(self) -> Option<Operator> {
+        use self::SyntaxKind::*;
+
+        match self {
+            Plus => Some(Operator::Add),
+            Minus => Some(Operator::Subtract),
+            Star => Some(Operator::Multiply),
+            Slash => Some(Operator::Divide),
+            _ => None,
+        }
+    }
+
     pub fn from_keyword(ident: &str) -> Option<Self> {
         use self::SyntaxKind::*;
 
         match ident {
             "struct" => Some(StructKeyword),
             "fn" => Some(FnKeyword),
+            "let" => Some(LetKeyword),
             _ => None,
         }
     }
@@ -188,5 +219,52 @@ impl SyntaxKind {
 impl From<SyntaxKind> for rowan::SyntaxKind {
     fn from(kind: SyntaxKind) -> Self {
         Self(kind as u16)
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub enum Operator {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+}
+
+impl Operator {
+    pub fn precedence(self) -> u8 {
+        match self {
+            Operator::Add => 0,
+            Operator::Subtract => 0,
+            Operator::Multiply => 0,
+            Operator::Divide => 0,
+        }
+    }
+
+    pub fn associativity(self) -> Associativity {
+        match self {
+            Operator::Add => Associativity::Left,
+            Operator::Subtract => Associativity::Left,
+            Operator::Multiply => Associativity::Left,
+            Operator::Divide => Associativity::Left,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+pub enum Associativity {
+    Left,
+    Right,
+}
+
+impl Associativity {
+    pub fn left(self) -> bool {
+        match self {
+            Associativity::Left => true,
+            Associativity::Right => false,
+        }
+    }
+
+    pub fn right(self) -> bool {
+        !self.left()
     }
 }

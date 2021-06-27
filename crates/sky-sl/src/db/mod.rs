@@ -55,7 +55,5 @@ mod tests {
             dbg!(structdef.identifier());
             dbg!(structdef);
         }
-
-        panic!();
     }
 }

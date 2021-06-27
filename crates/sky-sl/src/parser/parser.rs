@@ -34,6 +34,15 @@ impl<'a> Parser<'a> {
         Ok(self.token[0].kind())
     }
 
+    /// Shorthand for parsing whitespace
+    pub fn ws(&mut self) -> &mut Self {
+        if !self.eof() && self.is_at(SyntaxKind::Whitespace).unwrap() {
+            self.bump().unwrap();
+        }
+
+        self
+    }
+
     pub fn bump_if(&mut self, kind: SyntaxKind) -> Result<(), ParseError> {
         if self.is_at(kind)? {
             self.bump()?;
@@ -72,6 +81,14 @@ impl<'a> Parser<'a> {
 
     pub fn end_node(&mut self) {
         self.builder.finish_node();
+    }
+
+    pub fn checkpoint(&mut self) -> Checkpoint {
+        self.builder.checkpoint()
+    }
+
+    pub fn begin_node_at(&mut self, checkpoint: Checkpoint, kind: SyntaxKind) {
+        self.builder.start_node_at(checkpoint, kind.into());
     }
 
     pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self) -> Result<(), ParseError>) -> Result<(), ParseError> {
