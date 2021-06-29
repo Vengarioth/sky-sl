@@ -1,5 +1,4 @@
 use crate::syn::cst::SyntaxKind;
-use thiserror::*;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum ErrorKind {

@@ -121,7 +121,7 @@ impl Cursor<'_> {
 mod tests {
     use super::*;
 
-    // #[test]
+    #[test]
     fn it_works() {
         tokenize("/* */ hello world struct Foo { } fn bar() -> Baz { return null; }");
     }

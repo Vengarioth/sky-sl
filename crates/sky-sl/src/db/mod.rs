@@ -15,7 +15,7 @@ mod tests {
     use crate::syn::ast::*;
     use crate::syn::Parse;
 
-    // #[test]
+    #[test]
     fn it_is_send() {
         let db = CompilerDatabase::default();
         std::thread::spawn(move || {
@@ -23,7 +23,7 @@ mod tests {
         });
     }
 
-    // #[test]
+    #[test]
     fn it_works() {
         let mut db = CompilerDatabase::default();
         

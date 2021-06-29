@@ -348,12 +348,10 @@ fn parse_primary_expression(parser: &mut Parser) {
 }
 
 fn parse_postfix_expression(parser: &mut Parser) {
-    loop {
-        // TODO call
-        // TODO dot
-        // TODO field
-        break;
-    }
+    // TODO call
+    // TODO dot
+    // TODO field
+    unimplemented!()
 }
 
 fn parse_atom_expression(parser: &mut Parser) {
