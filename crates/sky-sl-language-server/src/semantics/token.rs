@@ -14,6 +14,7 @@ impl TokenIndex {
     pub const STRUCT: TokenIndex = TokenIndex::new(3, "struct");
     pub const PARAMETER: TokenIndex = TokenIndex::new(4, "parameter");
     pub const PROPERTY: TokenIndex = TokenIndex::new(5, "property");
+    pub const TYPE: TokenIndex = TokenIndex::new(6, "type");
     // Don't forget to add it to Self::legend as well
 
     const fn new(index: u32, tag: &'static str) -> Self {
@@ -35,6 +36,7 @@ impl TokenIndex {
             Self::STRUCT.token_type(),
             Self::PARAMETER.token_type(),
             Self::PROPERTY.token_type(),
+            Self::TYPE.token_type(),
         ]
     }
 }

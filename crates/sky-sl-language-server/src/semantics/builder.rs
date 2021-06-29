@@ -23,7 +23,6 @@ impl<'a> SemanticTokensBuilder<'a> {
         let delta_line = range.start.line - self.line;
 
         if range.start.line != self.line {
-            dbg!("reset on new line");
             self.offset = 0;
         }
 

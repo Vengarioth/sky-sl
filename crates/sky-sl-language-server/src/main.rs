@@ -199,8 +199,6 @@ impl LanguageServer for Backend {
 
         let semantic_tokens = semantics::get_semantic_tokens(root, &line_index);
 
-        dbg!(&semantic_tokens);
-
         Ok(Some(SemanticTokensResult::Tokens(semantic_tokens)))
     }
 

@@ -34,6 +34,14 @@ impl<'a> Parser<'a> {
         Ok(self.token[0].kind())
     }
 
+    pub fn next(&self) -> Option<SyntaxKind> {
+        if self.token.len() < 2 {
+            return None;
+        }
+
+        Some(self.token[1].kind())
+    }
+
     /// Shorthand for parsing whitespace
     pub fn ws(&mut self) -> &mut Self {
         if !self.eof() && self.is_at(SyntaxKind::Whitespace).unwrap() {

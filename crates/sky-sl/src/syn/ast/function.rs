@@ -1,4 +1,4 @@
-use super::{AstChildren, AstNode, IdentifierOwner, ArgumentListOwner};
+use super::{AstChildren, AstNode, IdentifierOwner, ArgumentListOwner, BlockDefinitionOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -29,3 +29,4 @@ pub trait FunctionDefinitionOwner: AstNode {
 
 impl IdentifierOwner for FunctionDefinition {}
 impl ArgumentListOwner for FunctionDefinition {}
+impl BlockDefinitionOwner for FunctionDefinition {}

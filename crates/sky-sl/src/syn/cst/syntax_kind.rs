@@ -26,17 +26,23 @@ pub enum SyntaxKind {
     /// Block
     Block,
 
-    /// A statement belonging to a block
-    Statement,
+    /// A let binding statement e.g. `let a = 1 + 2;`
+    LetStatement,
 
-    /// An expression belonging to a statement
-    Expression,
+    /// A grouping expression e.g. `(a + b)`
+    GroupExpression,
+
+    /// A path expression e.g. `a`, `a::b`
+    PathExpression,
 
     /// A literal expression
     LiteralExpression,
 
     /// A binary expression with two operands
     BinaryExpression,
+
+    /// An operator as part of an expression
+    Operator,
 
     /// the "let" keyword
     LetKeyword,
@@ -49,6 +55,9 @@ pub enum SyntaxKind {
 
     /// any non-keyword identifier
     Identifier,
+
+    /// any type-identifier (TODO remove when we have paths)
+    TypeIdentifier,
 
     /// any whitespace
     Whitespace,
@@ -193,13 +202,11 @@ impl SyntaxKind {
     }
 
     pub fn operator(self) -> Option<Operator> {
-        use self::SyntaxKind::*;
-
         match self {
-            Plus => Some(Operator::Add),
-            Minus => Some(Operator::Subtract),
-            Star => Some(Operator::Multiply),
-            Slash => Some(Operator::Divide),
+            SyntaxKind::Plus => Some(Operator::Add),
+            SyntaxKind::Minus => Some(Operator::Subtract),
+            SyntaxKind::Star => Some(Operator::Multiply),
+            SyntaxKind::Slash => Some(Operator::Divide),
             _ => None,
         }
     }

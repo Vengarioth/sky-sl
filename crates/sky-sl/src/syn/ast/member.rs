@@ -1,5 +1,5 @@
 use crate::syn::cst::*;
-use super::{AstNode, AstChildren, IdentifierOwner};
+use super::{AstNode, AstChildren, IdentifierOwner, TypeIdentifierOwner};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct MemberList {
@@ -48,6 +48,7 @@ impl AstNode for Member {
 }
 
 impl IdentifierOwner for Member {}
+impl TypeIdentifierOwner for Member {}
 
 pub trait MemberOwner: AstNode {
     fn member(&self) -> AstChildren<Member> {

@@ -42,7 +42,7 @@ fn parse_item(parser: &mut Parser) -> Result<(), ParseError> {
 
 /// Parses a struct item
 ///
-/// ```
+/// ```ignore
 /// struct Example {
 ///     member: MemberType,
 /// }
@@ -75,7 +75,7 @@ fn parse_struct(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 /// Parses a list of struct members
-/// ```
+/// ```ignore
 /// member: MemberType,
 /// second_member: SecondMemberType,
 /// ```
@@ -99,7 +99,7 @@ fn parse_member_list(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 /// Parses a single member of a struct
-/// ```
+/// ```ignore
 /// member: MemberType
 /// ```
 fn parse_member(parser: &mut Parser) -> Result<(), ParseError> {
@@ -111,13 +111,13 @@ fn parse_member(parser: &mut Parser) -> Result<(), ParseError> {
 
         parser.bump_if(SyntaxKind::Whitespace)?;
         // TODO proper type identifier
-        parser.bump_if(SyntaxKind::Identifier)?;
+        parse_type_identifier(parser)?;
         Ok(())
     })
 }
 
 /// Parses a function item
-/// ```
+/// ```ignore
 /// fn example() {
 ///     
 /// }
@@ -165,7 +165,7 @@ fn parse_function(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 /// Parses a list of arguments, excluding parentheses, separated by comma (allows trailing comma)
-/// ```
+/// ```ignore
 /// one: One, two: Two
 /// ```
 fn parse_arguments(parser: &mut Parser) -> Result<(), ParseError> {
@@ -188,7 +188,7 @@ fn parse_arguments(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 /// Parses a single argument
-/// ```
+/// ```ignore
 /// one: One
 /// ```
 fn parse_argument(parser: &mut Parser) -> Result<(), ParseError> {
@@ -200,7 +200,7 @@ fn parse_argument(parser: &mut Parser) -> Result<(), ParseError> {
 
         parser.bump_if(SyntaxKind::Whitespace)?;
         // TODO proper type identifier
-        parser.bump_if(SyntaxKind::Identifier)?;
+        parse_type_identifier(parser)?;
         Ok(())
     })
 }
@@ -210,6 +210,21 @@ fn parse_identifier(parser: &mut Parser) -> Result<(), ParseError> {
     parser.bump_if(SyntaxKind::Whitespace)?;
 
     parser.node(SyntaxKind::Identifier, |parser| {
+        if !parser.is_at(SyntaxKind::Identifier)? {
+            parser.emit_error(ErrorKind::NotFound(SyntaxKind::Identifier));
+        } else {
+            parser.bump()?;
+        }
+
+        Ok(())
+    })
+}
+
+fn parse_type_identifier(parser: &mut Parser) -> Result<(), ParseError> {
+    // TODO
+    parser.bump_if(SyntaxKind::Whitespace)?;
+
+    parser.node(SyntaxKind::TypeIdentifier, |parser| {
         if !parser.is_at(SyntaxKind::Identifier)? {
             parser.emit_error(ErrorKind::NotFound(SyntaxKind::Identifier));
         } else {
@@ -236,7 +251,8 @@ fn parse_block(parser: &mut Parser) -> Result<(), ParseError> {
 
 /// Parses a statement
 fn parse_statement(parser: &mut Parser) -> Result<(), ParseError> {
-    parser.node(SyntaxKind::Statement, |parser| {
+    // TODO
+    parser.node(SyntaxKind::LetStatement, |parser| {
 
         if parser.is_at(SyntaxKind::LetKeyword)? {
             parse_let_statement(parser)?;
@@ -302,10 +318,7 @@ fn parse_expression_statement(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 fn parse_expression(parser: &mut Parser) -> Result<(), ParseError> {
-    println!("parse_expression");
-    parser.node(SyntaxKind::Expression, |parser| {
-        parse_binary_expression(parser)
-    })
+    parse_binary_expression(parser)
 }
 
 fn parse_binary_expression(parser: &mut Parser) -> Result<(), ParseError> {
@@ -314,7 +327,6 @@ fn parse_binary_expression(parser: &mut Parser) -> Result<(), ParseError> {
         
     while let Some(operator) = parse_operator(parser)? {
         parser.begin_node_at(checkpoint, SyntaxKind::BinaryExpression);
-        dbg!(operator);
 
         parse_expression(parser)?;
         parser.end_node();
@@ -324,7 +336,6 @@ fn parse_binary_expression(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 fn parse_primary_expression(parser: &mut Parser) -> Result<(), ParseError> {
-    println!("parse_primary_expression");
     let current = parser.ws().current()?;
     match current {
         SyntaxKind::Minus | SyntaxKind::Bang => {
@@ -340,7 +351,6 @@ fn parse_primary_expression(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 fn parse_postfix_expression(parser: &mut Parser) -> Result<(), ParseError> {
-    println!("parse_postfix_expression");
     loop {
         // TODO call
         // TODO dot
@@ -351,33 +361,66 @@ fn parse_postfix_expression(parser: &mut Parser) -> Result<(), ParseError> {
 }
 
 fn parse_atom_expression(parser: &mut Parser) -> Result<(), ParseError> {
-    println!("parse_atom_expression");
-    if let Some(literal) = parse_literal_expression(parser)? {
-        dbg!(literal);
+
+    let current = parser.ws().current()?;
+
+    if current == SyntaxKind::OpenParen {
+        return parser.node(SyntaxKind::GroupExpression, |parser| {
+            parser.bump()?;
+    
+            parse_expression(parser)?;
+            if !parser.ws().is_at(SyntaxKind::CloseParen)? {
+                // error
+                return Ok(());
+            }
+    
+            parser.bump()?;
+
+            Ok(())
+        });
+    }
+
+    if let Some(path) = parse_path_expression(parser)? {
         return Ok(());
     }
 
-    // TODO parens etc
+    if let Some(literal) = parse_literal_expression(parser)? {
+        return Ok(());
+    }
 
     Ok(())
 }
 
 fn parse_operator(parser: &mut Parser) -> Result<Option<Operator>, ParseError> {
-    println!("parse_operator");
     let current = parser.ws().current()?;
+    let next = parser.next();
+
+    match (current, next) {
+        (SyntaxKind::Equals, Some(SyntaxKind::Equals)) => {},
+        _ => {},
+    }
 
     if let Some(operator) = current.operator() {
-        parser.node(SyntaxKind::Plus, |parser| parser.bump())?;
+        parser.node(SyntaxKind::Operator, |parser| parser.bump())?;
         return Ok(Some(operator));
     }
 
     Ok(None)
 }
 
+fn parse_path_expression(parser: &mut Parser) -> Result<Option<()>, ParseError> {
+    // TODO proper parsing of path expr
+    if parser.ws().is_at(SyntaxKind::Identifier)? {
+        parser.node(SyntaxKind::PathExpression, |parser| parser.bump())?;
+        Ok(Some(()))
+    } else {
+        Ok(None)
+    }
+}
+
 fn parse_literal_expression(parser: &mut Parser) -> Result<Option<()>, ParseError> {
-    println!("parse_literal_expression");
     if parser.ws().is_at(SyntaxKind::NumLiteral)? {
-        parser.node(SyntaxKind::Expression, |parser| parser.bump())?;
+        parser.node(SyntaxKind::LiteralExpression, |parser| parser.bump())?;
         Ok(Some(()))
     } else {
         Ok(None)
@@ -389,11 +432,45 @@ mod tests {
     use super::*;
     use crate::lexer::tokenize;
 
+    // A list of complete expressions, to test that the parser is correct
+    const VALID_EXPRESSIONS: &[&str] = &[
+        "1",
+        "(1)",
+        "1 + 1",
+        "1 + 2 + 3",
+        "1 + (2 + 3)",
+        "(1 + 2 + 3)",
+        "(1 + 2) + 3",
+        "a",
+        "(a)",
+        "a + b",
+        "a + (b + c)",
+        "(a + b + c)",
+        "(a + b) + c",
+        "((a + b) + (c))",
+        "((a + b)) + c",
+        "(((a + b))) + c",
+    ];
+
+    // A list of incomplete expressions, to test that the parser terminates
+    const INCOMPLETE_EXPRESSIONS: &[&str] = &[
+        "(1",
+        // "1)",
+    ];
+
     #[test]
     fn it_works() {
-        let input = "fn foo() { let a = 1 + 1; }";
-        let token = tokenize(input);
-        dbg!(parse(&token, input).tree());
-        panic!();
+
+        for expr in VALID_EXPRESSIONS {
+            let input = format!("fn foo() {{ let a = {}; }}", expr);
+            let token = tokenize(&input);
+            assert!(parse(&token, &input).errors().len() == 0);
+        }
+
+        for expr in INCOMPLETE_EXPRESSIONS {
+            let input = format!("fn foo() {{ let a = {}; }}", expr);
+            let token = tokenize(&input);
+            assert!(parse(&token, &input).errors().len() == 0);
+        }
     }
 }
