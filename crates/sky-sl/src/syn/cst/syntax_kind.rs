@@ -149,6 +149,10 @@ pub enum SyntaxKind {
     /// "%"
     Percent,
 
+    /// End of file
+    EOF,
+
+    /// Error
     Error,
 }
 

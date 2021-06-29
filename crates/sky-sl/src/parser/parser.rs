@@ -1,5 +1,5 @@
 use crate::{lexer::Token, syn::cst::*, syn::Parse, syn::ast::Root};
-use super::{SyntaxError, ErrorKind, ParseError};
+use super::{ErrorKind, ParseError, SyntaxError, TokenSet};
 
 #[derive(Debug)]
 pub struct Parser<'a> {
@@ -24,6 +24,11 @@ impl<'a> Parser<'a> {
     pub fn is_at(&self, kind: SyntaxKind) -> Result<bool, ParseError> {
         let current = self.current()?;
         Ok(current == kind)
+    }
+
+    pub fn is_at_set(&self, set: &TokenSet) -> Result<bool, ParseError> {
+        let current = self.current()?;
+        Ok(set.contains(&current))
     }
 
     pub fn current(&self) -> Result<SyntaxKind, ParseError> {
@@ -76,7 +81,18 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    pub fn recover(&mut self, _recover_points: &[SyntaxKind]) {
+    pub fn error_and_recover(&mut self, error: ErrorKind, kinds: &TokenSet) -> Result<(), ParseError> {
+        if self.is_at(SyntaxKind::OpenBrace)? || self.is_at(SyntaxKind::CloseBrace)? || self.is_at_set(kinds)? {
+            // error
+            self.emit_error(error);
+            Ok(())
+        } else {
+            self.begin_node(SyntaxKind::Error);
+            self.emit_error(error);
+            let r = self.bump();
+            self.end_node();
+            r
+        }
     }
 
     pub fn eof(&self) -> bool {

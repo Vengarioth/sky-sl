@@ -3,8 +3,10 @@ use crate::syn::{Parse, cst::*, ast::Root};
 
 mod error;
 mod parser;
+mod token_set;
 pub use error::*;
 pub use parser::*;
+pub use token_set::*;
 
 pub fn parse<'a>(token: &'a [Token], input: &'a str) -> Parse<Root> {
     let mut parser = Parser::new(token, input);
@@ -55,8 +57,7 @@ fn parse_struct(parser: &mut Parser) -> Result<(), ParseError> {
 
         parser.bump_if(SyntaxKind::Whitespace)?;
         if !parser.is_at(SyntaxKind::OpenBrace)? {
-            parser.emit_error(ErrorKind::NotFound(SyntaxKind::OpenBrace));
-            parser.recover(&[SyntaxKind::CloseBrace]);
+            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBrace), &token_set(&[SyntaxKind::CloseBrace]))?;
         } else {
             parser.bump()?;
         }
@@ -299,21 +300,25 @@ fn parse_let_statement(parser: &mut Parser) -> Result<(), ParseError> {
     parser.bump_if(SyntaxKind::Whitespace)?;
 
     if !parser.is_at(SyntaxKind::Semicolon)? {
-        // error
-        return Ok(());
+        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
     }
     parser.bump()?;
 
-    // identifier
-    // =
-    // expression
-    // ;
     Ok(())
 }
 
 fn parse_expression_statement(parser: &mut Parser) -> Result<(), ParseError> {
-    // expression
-    // ;
+    parser.bump_if(SyntaxKind::Whitespace)?;
+
+    parse_expression(parser)?;
+
+    parser.bump_if(SyntaxKind::Whitespace)?;
+
+    if !parser.is_at(SyntaxKind::Semicolon)? {
+        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
+    }
+    parser.bump()?;
+
     Ok(())
 }
 
@@ -370,8 +375,7 @@ fn parse_atom_expression(parser: &mut Parser) -> Result<(), ParseError> {
     
             parse_expression(parser)?;
             if !parser.ws().is_at(SyntaxKind::CloseParen)? {
-                // error
-                return Ok(());
+                return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[SyntaxKind::Semicolon]));
             }
     
             parser.bump()?;
@@ -380,11 +384,11 @@ fn parse_atom_expression(parser: &mut Parser) -> Result<(), ParseError> {
         });
     }
 
-    if let Some(path) = parse_path_expression(parser)? {
+    if let Some(_path) = parse_path_expression(parser)? {
         return Ok(());
     }
 
-    if let Some(literal) = parse_literal_expression(parser)? {
+    if let Some(_literal) = parse_literal_expression(parser)? {
         return Ok(());
     }
 
@@ -454,8 +458,10 @@ mod tests {
 
     // A list of incomplete expressions, to test that the parser terminates
     const INCOMPLETE_EXPRESSIONS: &[&str] = &[
+        "1)",
+        "(",
         "(1",
-        // "1)",
+        "(1 + 2",
     ];
 
     #[test]
@@ -468,9 +474,10 @@ mod tests {
         }
 
         for expr in INCOMPLETE_EXPRESSIONS {
-            let input = format!("fn foo() {{ let a = {}; }}", expr);
+            let input = format!("fn foo() {{ let a = {}", expr);
             let token = tokenize(&input);
-            assert!(parse(&token, &input).errors().len() == 0);
+            dbg!(&input, parse(&token, &input).errors());
+            assert!(parse(&token, &input).errors().len() != 0);
         }
     }
 }
