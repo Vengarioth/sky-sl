@@ -13,9 +13,3 @@ pub struct SyntaxError {
     pub length: usize,
     pub kind: ErrorKind,
 }
-
-#[derive(Debug, Error)]
-pub enum ParseError {
-    #[error("Unexpected end of file")]
-    EOF,
-}

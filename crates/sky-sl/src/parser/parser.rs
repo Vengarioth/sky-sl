@@ -1,5 +1,5 @@
 use crate::{lexer::Token, syn::cst::*, syn::Parse, syn::ast::Root};
-use super::{ErrorKind, ParseError, SyntaxError, TokenSet};
+use super::{ErrorKind, SyntaxError, TokenSet};
 
 #[derive(Debug)]
 pub struct Parser<'a> {
@@ -21,22 +21,20 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn is_at(&self, kind: SyntaxKind) -> Result<bool, ParseError> {
-        let current = self.current()?;
-        Ok(current == kind)
+    pub fn is_at(&self, kind: SyntaxKind) -> bool {
+        self.current() == kind
     }
 
-    pub fn is_at_set(&self, set: &TokenSet) -> Result<bool, ParseError> {
-        let current = self.current()?;
-        Ok(set.contains(&current))
+    pub fn is_at_set(&self, set: &TokenSet) -> bool {
+        set.contains(&self.current())
     }
 
-    pub fn current(&self) -> Result<SyntaxKind, ParseError> {
+    pub fn current(&self) -> SyntaxKind {
         if self.eof() {
-            return Err(ParseError::EOF);
+            return SyntaxKind::EOF;
         }
 
-        Ok(self.token[0].kind())
+        self.token[0].kind()
     }
 
     pub fn next(&self) -> Option<SyntaxKind> {
@@ -49,24 +47,22 @@ impl<'a> Parser<'a> {
 
     /// Shorthand for parsing whitespace
     pub fn ws(&mut self) -> &mut Self {
-        if !self.eof() && self.is_at(SyntaxKind::Whitespace).unwrap() {
-            self.bump().unwrap();
+        if self.is_at(SyntaxKind::Whitespace) {
+            self.bump();
         }
 
         self
     }
 
-    pub fn bump_if(&mut self, kind: SyntaxKind) -> Result<(), ParseError> {
-        if self.is_at(kind)? {
-            self.bump()?;
+    pub fn bump_if(&mut self, kind: SyntaxKind) {
+        if self.is_at(kind) {
+            self.bump();
         }
-
-        Ok(())
     }
 
-    pub fn bump(&mut self) -> Result<(), ParseError> {
+    pub fn bump(&mut self) {
         if self.eof() {
-            return Err(ParseError::EOF);
+            return;
         }
 
         let kind = self.token[0].kind();
@@ -78,20 +74,16 @@ impl<'a> Parser<'a> {
         self.offset += length;
 
         self.emit_token(kind, current_str);
-        Ok(())
     }
 
-    pub fn error_and_recover(&mut self, error: ErrorKind, kinds: &TokenSet) -> Result<(), ParseError> {
-        if self.is_at(SyntaxKind::OpenBrace)? || self.is_at(SyntaxKind::CloseBrace)? || self.is_at_set(kinds)? {
-            // error
+    pub fn error_and_recover(&mut self, error: ErrorKind, kinds: &TokenSet) {
+        if self.is_at(SyntaxKind::OpenBrace) || self.is_at(SyntaxKind::CloseBrace) || self.is_at_set(kinds) {
             self.emit_error(error);
-            Ok(())
         } else {
             self.begin_node(SyntaxKind::Error);
             self.emit_error(error);
-            let r = self.bump();
+            self.bump();
             self.end_node();
-            r
         }
     }
 
@@ -115,14 +107,10 @@ impl<'a> Parser<'a> {
         self.builder.start_node_at(checkpoint, kind.into());
     }
 
-    pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self) -> Result<(), ParseError>) -> Result<(), ParseError> {
+    pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self)) {
         self.begin_node(kind);
-
-        let r = f(self);
-
+        f(self);
         self.end_node();
-
-        r
     }
 
     pub fn emit_token(&mut self, kind: SyntaxKind, text: &str) {
@@ -140,5 +128,9 @@ impl<'a> Parser<'a> {
     pub fn finish(self) -> Parse<Root> {
         let root = self.builder.finish();
         Parse::new(root, self.errors)
+    }
+
+    pub fn remaining(&self) -> Vec<SyntaxKind> {
+        self.token.iter().map(|t| t.kind()).collect()
     }
 }
