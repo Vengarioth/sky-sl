@@ -64,25 +64,45 @@
 <span id="61">61</span>
 <span id="62">62</span>
 <span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::syn::cst</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">std::marker::PhantomData</span>;
 
+<span class="kw">mod</span> <span class="ident">expression</span>;
+<span class="kw">mod</span> <span class="ident">statement</span>;
+
 <span class="kw">mod</span> <span class="ident">arguments</span>;
+<span class="kw">mod</span> <span class="ident">block</span>;
 <span class="kw">mod</span> <span class="ident">function</span>;
 <span class="kw">mod</span> <span class="ident">identifier</span>;
 <span class="kw">mod</span> <span class="ident">member</span>;
 <span class="kw">mod</span> <span class="ident">module</span>;
 <span class="kw">mod</span> <span class="ident">root</span>;
 <span class="kw">mod</span> <span class="ident">structure</span>;
+<span class="kw">mod</span> <span class="ident">type_identifier</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">expression</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">statement</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">arguments</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">block</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">function</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">identifier</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">member</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">module</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">root</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">structure</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">type_identifier</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AstNode</span>: <span class="ident">Clone</span> {
     <span class="kw">fn</span> <span class="ident">can_cast_from</span>(<span class="ident">kind</span>: <span class="ident">SyntaxKind</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span>;

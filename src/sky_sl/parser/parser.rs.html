@@ -121,6 +121,14 @@
 <span id="118">118</span>
 <span id="119">119</span>
 <span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">lexer::Token</span>, <span class="ident">syn::cst</span>::<span class="kw-2">*</span>, <span class="ident">syn::Parse</span>, <span class="ident">syn::ast::Root</span>};
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">SyntaxError</span>, <span class="ident">ErrorKind</span>, <span class="ident">ParseError</span>};
@@ -156,6 +164,14 @@
         }
 
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">token</span>[<span class="number">0</span>].<span class="ident">kind</span>())
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SyntaxKind</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">token</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">2</span> {
+            <span class="kw">return</span> <span class="prelude-val">None</span>;
+        }
+
+        <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">token</span>[<span class="number">1</span>].<span class="ident">kind</span>())
     }
 
     <span class="doccomment">/// Shorthand for parsing whitespace</span>

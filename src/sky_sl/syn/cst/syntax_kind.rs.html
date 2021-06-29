@@ -271,6 +271,13 @@
 <span id="268">268</span>
 <span id="269">269</span>
 <span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u16</span>)]</span>
@@ -300,17 +307,23 @@
     <span class="doccomment">/// Block</span>
     <span class="ident">Block</span>,
 
-    <span class="doccomment">/// A statement belonging to a block</span>
-    <span class="ident">Statement</span>,
+    <span class="doccomment">/// A let binding statement e.g. `let a = 1 + 2;`</span>
+    <span class="ident">LetStatement</span>,
 
-    <span class="doccomment">/// An expression belonging to a statement</span>
-    <span class="ident">Expression</span>,
+    <span class="doccomment">/// A grouping expression e.g. `(a + b)`</span>
+    <span class="ident">GroupExpression</span>,
+
+    <span class="doccomment">/// A path expression e.g. `a`, `a::b`</span>
+    <span class="ident">PathExpression</span>,
 
     <span class="doccomment">/// A literal expression</span>
     <span class="ident">LiteralExpression</span>,
 
     <span class="doccomment">/// A binary expression with two operands</span>
     <span class="ident">BinaryExpression</span>,
+
+    <span class="doccomment">/// An operator as part of an expression</span>
+    <span class="ident">Operator</span>,
 
     <span class="doccomment">/// the &quot;let&quot; keyword</span>
     <span class="ident">LetKeyword</span>,
@@ -323,6 +336,9 @@
 
     <span class="doccomment">/// any non-keyword identifier</span>
     <span class="ident">Identifier</span>,
+
+    <span class="doccomment">/// any type-identifier (TODO remove when we have paths)</span>
+    <span class="ident">TypeIdentifier</span>,
 
     <span class="doccomment">/// any whitespace</span>
     <span class="ident">Whitespace</span>,
@@ -467,13 +483,11 @@
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Operator</span><span class="op">&gt;</span> {
-        <span class="kw">use</span> <span class="self">self</span><span class="ident">::SyntaxKind</span>::<span class="kw-2">*</span>;
-
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Plus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Add</span>),
-            <span class="ident">Minus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Subtract</span>),
-            <span class="ident">Star</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Multiply</span>),
-            <span class="ident">Slash</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Divide</span>),
+            <span class="ident">SyntaxKind::Plus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Add</span>),
+            <span class="ident">SyntaxKind::Minus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Subtract</span>),
+            <span class="ident">SyntaxKind::Star</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Multiply</span>),
+            <span class="ident">SyntaxKind::Slash</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Divide</span>),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
         }
     }
