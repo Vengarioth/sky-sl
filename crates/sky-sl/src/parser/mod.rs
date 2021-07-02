@@ -351,7 +351,7 @@ fn parse_primary_expression(parser: &mut Parser) {
             loop {
                 match parser.current() {
                     SyntaxKind::OpenBracket => parse_index_expression(checkpoint, parser),
-                    SyntaxKind::OpenParen => parse_function_call_expression(checkpoint, parser),
+                    SyntaxKind::OpenParen => parse_call_expression(checkpoint, parser),
                     SyntaxKind::Dot => parse_field_access_expression(checkpoint, parser),
                     _ => break,
                 }
@@ -361,48 +361,40 @@ fn parse_primary_expression(parser: &mut Parser) {
     }
 }
 
-fn parse_function_call_expression(checkpoint: Checkpoint, parser: &mut Parser) {
-    parser.begin_node_at(checkpoint, SyntaxKind::FunctionCallExpression);
-    parse_call_expression(checkpoint, parser);
-    parser.end_node();
-}
-
-fn parse_method_call_expression(checkpoint: Checkpoint, parser: &mut Parser) {
-    parser.begin_node_at(checkpoint, SyntaxKind::MethodCallExpression);
-    parse_call_expression(checkpoint, parser);
-    parser.end_node();
-}
-
 fn parse_call_expression(checkpoint: Checkpoint, parser: &mut Parser) {
-    // parse open paren
-    if !parser.is_at(SyntaxKind::OpenParen) {
-        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenParen), &token_set(&[]));
-    }
-    parser.bump();
-
-    // TODO parse arguments
-
-    while !parser.is_at(SyntaxKind::CloseParen) && !parser.eof() {
-        parser.ws();
-
-        if parser.is_at(SyntaxKind::CloseParen) {
-            break;
-        }
-
-        parse_expression(parser);
-        parser.ws();
-
-        if !parser.is_at(SyntaxKind::Comma) {
-            break;
+    parser.begin_node_at(checkpoint, SyntaxKind::CallExpression);
+    parser.node(SyntaxKind::CallArgumentList, |parser| {
+        // parse open paren
+        if !parser.is_at(SyntaxKind::OpenParen) {
+            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenParen), &token_set(&[]));
         }
         parser.bump();
-    }
-
-    // parse close paren
-    if !parser.is_at(SyntaxKind::CloseParen) {
-        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[]));
-    }
-    parser.bump();
+    
+        // TODO parse arguments
+    
+        while !parser.is_at(SyntaxKind::CloseParen) && !parser.eof() {
+            parser.ws();
+    
+            if parser.is_at(SyntaxKind::CloseParen) {
+                break;
+            }
+    
+            parse_expression(parser);
+            parser.ws();
+    
+            if !parser.is_at(SyntaxKind::Comma) {
+                break;
+            }
+            parser.bump();
+        }
+    
+        // parse close paren
+        if !parser.is_at(SyntaxKind::CloseParen) {
+            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[]));
+        }
+        parser.bump();
+    });
+    parser.end_node();
 }
 
 fn parse_index_expression(checkpoint: Checkpoint, parser: &mut Parser) {
@@ -428,6 +420,7 @@ fn parse_index_expression(checkpoint: Checkpoint, parser: &mut Parser) {
 }
 
 fn parse_field_access_expression(checkpoint: Checkpoint, parser: &mut Parser) {
+    // TODO we emit a FieldAccessExpression even in the case of a MethodCallExpression
     parser.begin_node_at(checkpoint, SyntaxKind::FieldAccessExpression);
 
     // parse dot
@@ -440,7 +433,8 @@ fn parse_field_access_expression(checkpoint: Checkpoint, parser: &mut Parser) {
 
         // parse method calls e.g. `a.b()`
         if parser.is_at(SyntaxKind::OpenParen) {
-            parse_method_call_expression(checkpoint, parser);
+            parse_call_expression(checkpoint, parser);
+            todo!("Methods are not implemented and we currently parse them incorrectly");
         }
 
     } else {
@@ -571,7 +565,8 @@ mod tests {
         "a.b.c",
         "a[0].b",
         "a.b[0]",
-        "a.b()",
+        "a.b[0].c",
+        "a = b(1.0, 1.0, 1.0, 1.0)",
     ];
 
     // A list of incomplete expressions, to test that the parser terminates

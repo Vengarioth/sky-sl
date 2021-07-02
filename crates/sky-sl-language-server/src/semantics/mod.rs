@@ -137,10 +137,9 @@ fn visit_expression(expression: Expression, builder: &mut SemanticTokensBuilder)
         ExpressionKind::LiteralExpression(literal_expression) => visit_literal_expression(literal_expression, builder),
         ExpressionKind::GroupExpression(group_expression) => visit_group_expression(group_expression, builder),
         ExpressionKind::BinaryExpression(binary_expression) => visit_binary_expression(binary_expression, builder),
-        ExpressionKind::FunctionCallExpression(_function_call_expression) => todo!(),
-        ExpressionKind::MethodCallExpression(_method_call_expression) => todo!(),
-        ExpressionKind::IndexExpression(_index_expression) => todo!(),
-        ExpressionKind::FieldAccessExpression(_field_access_expression) => todo!(),
+        ExpressionKind::CallExpression(call_expression) => visit_call_expression(call_expression, builder),
+        ExpressionKind::IndexExpression(index_expression) => visit_index_expression(index_expression, builder),
+        ExpressionKind::FieldAccessExpression(field_access_expression) => visit_field_access_expression(field_access_expression, builder),
         ExpressionKind::PathExpression(path_expression) => visit_path_expression(path_expression, builder),
     }
 }
@@ -163,4 +162,28 @@ fn visit_binary_expression(binary_expression: BinaryExpression, builder: &mut Se
 
 fn visit_path_expression(path_expression: PathExpression, builder: &mut SemanticTokensBuilder) {
     builder.build_token(path_expression.syntax().text_range(), *TokenIndex::VARIABLE, *ModifierIndex::NONE);
+}
+
+fn visit_call_expression(call_expression: CallExpression, builder: &mut SemanticTokensBuilder) {
+    if let Some(child) = call_expression.expression() {
+        visit_expression(child, builder);
+    }
+
+    if let Some(arguments) = call_expression.arguments() {
+        for child in arguments.expressions() {
+            visit_expression(child, builder);
+        }
+    }
+}
+
+fn visit_index_expression(index_expression: IndexExpression, builder: &mut SemanticTokensBuilder) {
+    for child in index_expression.expressions() {
+        visit_expression(child, builder);
+    }
+}
+
+fn visit_field_access_expression(field_access_expression: FieldAccessExpression, builder: &mut SemanticTokensBuilder) {
+    for child in field_access_expression.expressions() {
+        visit_expression(child, builder);
+    }
 }

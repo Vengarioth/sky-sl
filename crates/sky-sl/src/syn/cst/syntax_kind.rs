@@ -47,11 +47,11 @@ pub enum SyntaxKind {
     /// A binary expression with two operands
     BinaryExpression,
 
-    /// A postfix call expression e.g. `a()`
-    FunctionCallExpression,
+    /// A postfix call expression e.g. `a()` or `a.b()`
+    CallExpression,
 
-    /// A method call expression e.g. `a.b()`
-    MethodCallExpression,
+    /// A list of expressions used in a call e.g. `(1.0, 2.0)`
+    CallArgumentList,
 
     /// A postfix index expression e.g. `a[0]`
     IndexExpression,

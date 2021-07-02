@@ -6,5 +6,7 @@ fn main() {
     let a = 0;
     let b = 1;
     let c = a + b;
+    let d = a[0.0 + 1.0];
+    let e = a.b;
     gl_frag_color = vec4(1.0, 1.0, 1.0, 1.0);
 }

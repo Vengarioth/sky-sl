@@ -2,21 +2,19 @@ use super::{AstChildren, AstNode};
 use crate::syn::cst::{SyntaxKind, SyntaxNode};
 
 mod binary_expression;
-mod function_call_expression;
+mod call_expression;
 mod field_access_expression;
 mod group_expression;
 mod index_expression;
 mod literal_expression;
-mod method_call_expression;
 mod path_expression;
 
 pub use binary_expression::*;
+pub use call_expression::*;
 pub use field_access_expression::*;
-pub use function_call_expression::*;
 pub use group_expression::*;
 pub use index_expression::*;
 pub use literal_expression::*;
-pub use method_call_expression::*;
 pub use path_expression::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -30,8 +28,7 @@ impl AstNode for Expression {
             SyntaxKind::LiteralExpression
             | SyntaxKind::GroupExpression
             | SyntaxKind::BinaryExpression
-            | SyntaxKind::FunctionCallExpression
-            | SyntaxKind::MethodCallExpression
+            | SyntaxKind::CallExpression
             | SyntaxKind::FieldAccessExpression
             | SyntaxKind::IndexExpression
             | SyntaxKind::PathExpression => true,
@@ -63,11 +60,8 @@ impl Expression {
             SyntaxKind::BinaryExpression => ExpressionKind::BinaryExpression(
                 BinaryExpression::cast_from(self.syntax().clone()).unwrap(),
             ),
-            SyntaxKind::FunctionCallExpression => ExpressionKind::FunctionCallExpression(
-                FunctionCallExpression::cast_from(self.syntax().clone()).unwrap(),
-            ),
-            SyntaxKind::MethodCallExpression => ExpressionKind::MethodCallExpression(
-                MethodCallExpression::cast_from(self.syntax().clone()).unwrap(),
+            SyntaxKind::CallExpression => ExpressionKind::CallExpression(
+                CallExpression::cast_from(self.syntax().clone()).unwrap(),
             ),
             SyntaxKind::FieldAccessExpression => ExpressionKind::FieldAccessExpression(
                 FieldAccessExpression::cast_from(self.syntax().clone()).unwrap(),
@@ -88,8 +82,7 @@ pub enum ExpressionKind {
     LiteralExpression(LiteralExpression),
     GroupExpression(GroupExpression),
     BinaryExpression(BinaryExpression),
-    FunctionCallExpression(FunctionCallExpression),
-    MethodCallExpression(MethodCallExpression),
+    CallExpression(CallExpression),
     FieldAccessExpression(FieldAccessExpression),
     IndexExpression(IndexExpression),
     PathExpression(PathExpression),
