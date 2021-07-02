@@ -105,6 +105,62 @@ fn visit_block(block: BlockDefinition, builder: &mut SemanticTokensBuilder) {
     }
 }
 
-fn visit_statement(statement: Statement, _builder: &mut SemanticTokensBuilder) {
-    dbg!(statement);
+fn visit_statement(statement: Statement, builder: &mut SemanticTokensBuilder) {
+    match statement.kind() {
+        StatementKind::Let(let_statement) => visit_let_statement(let_statement, builder),
+        StatementKind::Expression(expression_statement) => visit_expression_statement(expression_statement, builder),
+    }
+}
+
+fn visit_let_statement(let_statement: LetStatement, builder: &mut SemanticTokensBuilder) {
+    if let Some(token) = let_statement.syntax().first_token() {
+        builder.build_token(token.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+    }
+
+    if let Some(identifier) = let_statement.identifier() {
+        builder.build_token(identifier.syntax().text_range(), *TokenIndex::VARIABLE, *ModifierIndex::DEFINITION);
+    }
+
+    if let Some(expression) = let_statement.expression() {
+        visit_expression(expression, builder);
+    }
+}
+
+fn visit_expression_statement(expression_statement: ExpressionStatement, builder: &mut SemanticTokensBuilder) {
+    if let Some(expression) = expression_statement.expression() {
+        visit_expression(expression, builder);
+    }
+}
+
+fn visit_expression(expression: Expression, builder: &mut SemanticTokensBuilder) {
+    match expression.kind() {
+        ExpressionKind::LiteralExpression(literal_expression) => visit_literal_expression(literal_expression, builder),
+        ExpressionKind::GroupExpression(group_expression) => visit_group_expression(group_expression, builder),
+        ExpressionKind::BinaryExpression(binary_expression) => visit_binary_expression(binary_expression, builder),
+        ExpressionKind::FunctionCallExpression(_function_call_expression) => todo!(),
+        ExpressionKind::MethodCallExpression(_method_call_expression) => todo!(),
+        ExpressionKind::IndexExpression(_index_expression) => todo!(),
+        ExpressionKind::FieldAccessExpression(_field_access_expression) => todo!(),
+        ExpressionKind::PathExpression(path_expression) => visit_path_expression(path_expression, builder),
+    }
+}
+
+fn visit_literal_expression(literal_expression: LiteralExpression, builder: &mut SemanticTokensBuilder) {
+    builder.build_token(literal_expression.syntax().text_range(), *TokenIndex::NUMBER, *ModifierIndex::NONE);
+}
+
+fn visit_group_expression(group_expression: GroupExpression, builder: &mut SemanticTokensBuilder) {
+    if let Some(child) = group_expression.expression() {
+        visit_expression(child, builder);
+    }
+}
+
+fn visit_binary_expression(binary_expression: BinaryExpression, builder: &mut SemanticTokensBuilder) {
+    for child in binary_expression.expressions() {
+        visit_expression(child, builder);
+    }
+}
+
+fn visit_path_expression(path_expression: PathExpression, builder: &mut SemanticTokensBuilder) {
+    builder.build_token(path_expression.syntax().text_range(), *TokenIndex::VARIABLE, *ModifierIndex::NONE);
 }

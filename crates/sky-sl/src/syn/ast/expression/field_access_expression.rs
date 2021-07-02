@@ -1,14 +1,14 @@
-use super::super::{AstNode, ExpressionOwner};
+use super::super::{AstNode};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GroupExpression {
+pub struct FieldAccessExpression {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl AstNode for GroupExpression {
+impl AstNode for FieldAccessExpression {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::GroupExpression
+        kind == SyntaxKind::FieldAccessExpression
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self>
@@ -20,5 +20,3 @@ impl AstNode for GroupExpression {
         &self.syntax
     }
 }
-
-impl ExpressionOwner for GroupExpression {}

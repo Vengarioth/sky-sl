@@ -1,4 +1,7 @@
+mod expression_statement;
 mod let_statement;
+
+pub use expression_statement::*;
 pub use let_statement::*;
 
 use super::{AstNode, AstChildren};
@@ -12,7 +15,7 @@ pub struct Statement {
 impl AstNode for Statement {
     fn can_cast_from(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::LetStatement => true,
+            SyntaxKind::LetStatement | SyntaxKind::ExpressionStatement => true,
             _ => false,
         }
     }
@@ -31,6 +34,7 @@ impl Statement {
     pub fn kind(&self) -> StatementKind {
         match self.syntax().kind() {
             SyntaxKind::LetStatement => StatementKind::Let(LetStatement::cast_from(self.syntax().clone()).unwrap()),
+            SyntaxKind::ExpressionStatement => StatementKind::Expression(ExpressionStatement::cast_from(self.syntax().clone()).unwrap()),
             _ => unreachable!(),
         }
     }
@@ -39,6 +43,7 @@ impl Statement {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum StatementKind {
     Let(LetStatement),
+    Expression(ExpressionStatement),
 }
 
 pub trait StatementsOwner: AstNode {

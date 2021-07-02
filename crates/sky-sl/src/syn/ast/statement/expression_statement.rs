@@ -1,14 +1,14 @@
-use super::super::{AstNode, ExpressionOwner};
+use super::super::{AstNode, AstChildren, ExpressionOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GroupExpression {
+pub struct ExpressionStatement {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl AstNode for GroupExpression {
+impl AstNode for ExpressionStatement {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::GroupExpression
+        kind == SyntaxKind::ExpressionStatement
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self>
@@ -21,4 +21,10 @@ impl AstNode for GroupExpression {
     }
 }
 
-impl ExpressionOwner for GroupExpression {}
+pub trait ExpressionStatementsOwner: AstNode {
+    fn let_statements(&self) -> AstChildren<ExpressionStatement> {
+        super::super::children(self)
+    }
+}
+
+impl ExpressionOwner for ExpressionStatement {}

@@ -23,7 +23,7 @@ impl AdHocPackage {
 }
 
 impl Package for AdHocPackage {
-    fn resolve(&mut self, path: &Utf8Path) {
+    fn resolve(&mut self, _path: &Utf8Path) {
         
     }
 }

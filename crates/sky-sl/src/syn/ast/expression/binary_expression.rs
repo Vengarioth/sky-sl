@@ -1,4 +1,4 @@
-use super::AstNode;
+use super::super::{AstNode, ExpressionsOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -20,3 +20,5 @@ impl AstNode for BinaryExpression {
         &self.syntax
     }
 }
+
+impl ExpressionsOwner for BinaryExpression {}

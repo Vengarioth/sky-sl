@@ -8,7 +8,7 @@ pub struct LiteralExpression {
 
 impl AstNode for LiteralExpression {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::BinaryExpression
+        kind == SyntaxKind::LiteralExpression
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self>

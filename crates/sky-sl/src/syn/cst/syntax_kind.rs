@@ -29,17 +29,32 @@ pub enum SyntaxKind {
     /// A let binding statement e.g. `let a = 1 + 2;`
     LetStatement,
 
+    /// A statement consisting of a single expression e.g. `my_fn();`
+    ExpressionStatement,
+
     /// A grouping expression e.g. `(a + b)`
     GroupExpression,
 
     /// A path expression e.g. `a`, `a::b`
     PathExpression,
 
+    /// A postfix field access expression e.g. `a.b`
+    FieldAccessExpression,
+
     /// A literal expression
     LiteralExpression,
 
     /// A binary expression with two operands
     BinaryExpression,
+
+    /// A postfix call expression e.g. `a()`
+    FunctionCallExpression,
+
+    /// A method call expression e.g. `a.b()`
+    MethodCallExpression,
+
+    /// A postfix index expression e.g. `a[0]`
+    IndexExpression,
 
     /// An operator as part of an expression
     Operator,
@@ -207,10 +222,19 @@ impl SyntaxKind {
 
     pub fn operator(self) -> Option<Operator> {
         match self {
+            SyntaxKind::Equals => Some(Operator::Assign),
+
             SyntaxKind::Plus => Some(Operator::Add),
             SyntaxKind::Minus => Some(Operator::Subtract),
             SyntaxKind::Star => Some(Operator::Multiply),
             SyntaxKind::Slash => Some(Operator::Divide),
+
+            SyntaxKind::Percent => Some(Operator::Remainder),
+
+            SyntaxKind::And => Some(Operator::And),
+            SyntaxKind::VerticalBar => Some(Operator::Or),
+            SyntaxKind::Caret => Some(Operator::XOr),
+
             _ => None,
         }
     }
@@ -235,28 +259,72 @@ impl From<SyntaxKind> for rowan::SyntaxKind {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub enum Operator {
+    /// Assignment operator
+    Assign,
+
+    /// Arithmetic Add operator
     Add,
+
+    /// Arithmetic Subtract operator
     Subtract,
+    
+    /// Arithmetic Multiply operator
     Multiply,
+    
+    /// Arithmetic Divide operator
     Divide,
+    
+    /// Remainder (modulo) operator
+    Remainder,
+
+    /// Logical AND operator
+    And,
+
+    /// Logical OR operator
+    Or,
+
+    /// Logical XOR operator
+    XOr,
+
+    // TODO left shift
+    // TODO right shift
 }
 
 impl Operator {
     pub fn precedence(self) -> u8 {
+        // TODO
         match self {
+            Operator::Assign => 0,
+
             Operator::Add => 0,
             Operator::Subtract => 0,
             Operator::Multiply => 0,
             Operator::Divide => 0,
+
+            Operator::Remainder => 0,
+
+            Operator::And => 0,
+            Operator::Or => 0,
+            Operator::XOr => 0,
         }
     }
 
     pub fn associativity(self) -> Associativity {
+        // TODO
         match self {
+            Operator::Assign => Associativity::Left,
+
             Operator::Add => Associativity::Left,
             Operator::Subtract => Associativity::Left,
             Operator::Multiply => Associativity::Left,
             Operator::Divide => Associativity::Left,
+
+            Operator::Remainder => Associativity::Left,
+
+            Operator::And => Associativity::Left,
+            Operator::Or => Associativity::Left,
+            Operator::XOr => Associativity::Left,
+
         }
     }
 }

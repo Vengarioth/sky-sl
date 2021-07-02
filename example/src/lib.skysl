@@ -1,17 +1,10 @@
-fn foo () {
-    let x = 1 + 2;
+struct Foo {
+    bar: Baz,
 }
 
-fn bar(a: A, b: B) {
+fn main() {
+    let a = 0;
+    let b = 1;
     let c = a + b;
-}
-
-struct Baz {
-    test: Test,
-    test_two: TestTwo,
-}
-
-struct Vertex {
-    position: Vec3,
-    uv: Vec2,
+    gl_frag_color = vec4(1.0, 1.0, 1.0, 1.0);
 }

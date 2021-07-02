@@ -1,4 +1,4 @@
-use super::super::{AstNode, AstChildren, ExpressionOwner};
+use super::super::{AstNode, AstChildren, ExpressionOwner, IdentifierOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -28,3 +28,4 @@ pub trait LetStatementsOwner: AstNode {
 }
 
 impl ExpressionOwner for LetStatement {}
+impl IdentifierOwner for LetStatement {}

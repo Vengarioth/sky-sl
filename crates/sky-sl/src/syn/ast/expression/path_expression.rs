@@ -8,7 +8,7 @@ pub struct PathExpression {
 
 impl AstNode for PathExpression {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::BinaryExpression
+        kind == SyntaxKind::PathExpression
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self>
