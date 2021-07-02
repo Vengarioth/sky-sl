@@ -278,6 +278,87 @@
 <span id="275">275</span>
 <span id="276">276</span>
 <span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u16</span>)]</span>
@@ -310,17 +391,41 @@
     <span class="doccomment">/// A let binding statement e.g. `let a = 1 + 2;`</span>
     <span class="ident">LetStatement</span>,
 
+    <span class="doccomment">/// A statement consisting of a single expression e.g. `my_fn();`</span>
+    <span class="ident">ExpressionStatement</span>,
+
     <span class="doccomment">/// A grouping expression e.g. `(a + b)`</span>
     <span class="ident">GroupExpression</span>,
 
     <span class="doccomment">/// A path expression e.g. `a`, `a::b`</span>
     <span class="ident">PathExpression</span>,
 
+    <span class="doccomment">/// A postfix field access expression e.g. `a.b`</span>
+    <span class="ident">FieldAccessExpression</span>,
+
     <span class="doccomment">/// A literal expression</span>
     <span class="ident">LiteralExpression</span>,
 
     <span class="doccomment">/// A binary expression with two operands</span>
     <span class="ident">BinaryExpression</span>,
+
+    <span class="doccomment">/// A postfix call expression e.g. `a()` or `a.b()`</span>
+    <span class="ident">CallExpression</span>,
+
+    <span class="doccomment">/// A list of expressions used in a call e.g. `(1.0, 2.0)`</span>
+    <span class="ident">CallArgumentList</span>,
+
+    <span class="doccomment">/// A postfix index expression e.g. `a[0]`</span>
+    <span class="ident">IndexExpression</span>,
+
+    <span class="doccomment">/// A struct expression e.g. `MyStruct { a: a, b: b }`</span>
+    <span class="ident">StructExpression</span>,
+
+    <span class="doccomment">/// A list of initializers for a struct expression e.g. `{ a: 1.0, b: 2.0 }`</span>
+    <span class="ident">StructExpressionFields</span>,
+
+    <span class="doccomment">/// A single struct expression field initializer e.g. `a: 10`</span>
+    <span class="ident">StructExpressionField</span>,
 
     <span class="doccomment">/// An operator as part of an expression</span>
     <span class="ident">Operator</span>,
@@ -430,6 +535,10 @@
     <span class="doccomment">/// &quot;%&quot;</span>
     <span class="ident">Percent</span>,
 
+    <span class="doccomment">/// End of file</span>
+    <span class="ident">EOF</span>,
+
+    <span class="doccomment">/// Error</span>
     <span class="ident">Error</span>,
 }
 
@@ -484,10 +593,19 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">operator</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Operator</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">SyntaxKind::Equals</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Assign</span>),
+
             <span class="ident">SyntaxKind::Plus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Add</span>),
             <span class="ident">SyntaxKind::Minus</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Subtract</span>),
             <span class="ident">SyntaxKind::Star</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Multiply</span>),
             <span class="ident">SyntaxKind::Slash</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Divide</span>),
+
+            <span class="ident">SyntaxKind::Percent</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Remainder</span>),
+
+            <span class="ident">SyntaxKind::And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::And</span>),
+            <span class="ident">SyntaxKind::VerticalBar</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::Or</span>),
+            <span class="ident">SyntaxKind::Caret</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">Operator::XOr</span>),
+
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
         }
     }
@@ -512,28 +630,72 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Operator</span> {
+    <span class="doccomment">/// Assignment operator</span>
+    <span class="ident">Assign</span>,
+
+    <span class="doccomment">/// Arithmetic Add operator</span>
     <span class="ident">Add</span>,
+
+    <span class="doccomment">/// Arithmetic Subtract operator</span>
     <span class="ident">Subtract</span>,
+    
+    <span class="doccomment">/// Arithmetic Multiply operator</span>
     <span class="ident">Multiply</span>,
+    
+    <span class="doccomment">/// Arithmetic Divide operator</span>
     <span class="ident">Divide</span>,
+    
+    <span class="doccomment">/// Remainder (modulo) operator</span>
+    <span class="ident">Remainder</span>,
+
+    <span class="doccomment">/// Logical AND operator</span>
+    <span class="ident">And</span>,
+
+    <span class="doccomment">/// Logical OR operator</span>
+    <span class="ident">Or</span>,
+
+    <span class="doccomment">/// Logical XOR operator</span>
+    <span class="ident">XOr</span>,
+
+    <span class="comment">// TODO left shift</span>
+    <span class="comment">// TODO right shift</span>
 }
 
 <span class="kw">impl</span> <span class="ident">Operator</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">precedence</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u8</span> {
+        <span class="comment">// TODO</span>
         <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Operator::Assign</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+
             <span class="ident">Operator::Add</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
             <span class="ident">Operator::Subtract</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
             <span class="ident">Operator::Multiply</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
             <span class="ident">Operator::Divide</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+
+            <span class="ident">Operator::Remainder</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+
+            <span class="ident">Operator::And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+            <span class="ident">Operator::Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
+            <span class="ident">Operator::XOr</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">0</span>,
         }
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">associativity</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Associativity</span> {
+        <span class="comment">// TODO</span>
         <span class="kw">match</span> <span class="self">self</span> {
+            <span class="ident">Operator::Assign</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+
             <span class="ident">Operator::Add</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
             <span class="ident">Operator::Subtract</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
             <span class="ident">Operator::Multiply</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
             <span class="ident">Operator::Divide</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+
+            <span class="ident">Operator::Remainder</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+
+            <span class="ident">Operator::And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+            <span class="ident">Operator::Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+            <span class="ident">Operator::XOr</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Associativity::Left</span>,
+
         }
     }
 }

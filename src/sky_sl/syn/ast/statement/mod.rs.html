@@ -49,8 +49,16 @@
 <span id="46">46</span>
 <span id="47">47</span>
 <span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
 </pre><div class="example-wrap"><pre class="rust ">
+<span class="kw">mod</span> <span class="ident">expression_statement</span>;
 <span class="kw">mod</span> <span class="ident">let_statement</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">expression_statement</span>::<span class="kw-2">*</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">let_statement</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">AstNode</span>, <span class="ident">AstChildren</span>};
@@ -64,7 +72,7 @@
 <span class="kw">impl</span> <span class="ident">AstNode</span> <span class="kw">for</span> <span class="ident">Statement</span> {
     <span class="kw">fn</span> <span class="ident">can_cast_from</span>(<span class="ident">kind</span>: <span class="ident">SyntaxKind</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
         <span class="kw">match</span> <span class="ident">kind</span> {
-            <span class="ident">SyntaxKind::LetStatement</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
+            <span class="ident">SyntaxKind::LetStatement</span> <span class="op">|</span> <span class="ident">SyntaxKind::ExpressionStatement</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">true</span>,
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="bool-val">false</span>,
         }
     }
@@ -83,6 +91,7 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">kind</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">StatementKind</span> {
         <span class="kw">match</span> <span class="self">self</span>.<span class="ident">syntax</span>().<span class="ident">kind</span>() {
             <span class="ident">SyntaxKind::LetStatement</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatementKind::Let</span>(<span class="ident">LetStatement::cast_from</span>(<span class="self">self</span>.<span class="ident">syntax</span>().<span class="ident">clone</span>()).<span class="ident">unwrap</span>()),
+            <span class="ident">SyntaxKind::ExpressionStatement</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">StatementKind::Expression</span>(<span class="ident">ExpressionStatement::cast_from</span>(<span class="self">self</span>.<span class="ident">syntax</span>().<span class="ident">clone</span>()).<span class="ident">unwrap</span>()),
             <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">unreachable!</span>(),
         }
     }
@@ -91,6 +100,7 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">StatementKind</span> {
     <span class="ident">Let</span>(<span class="ident">LetStatement</span>),
+    <span class="ident">Expression</span>(<span class="ident">ExpressionStatement</span>),
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">StatementsOwner</span>: <span class="ident">AstNode</span> {

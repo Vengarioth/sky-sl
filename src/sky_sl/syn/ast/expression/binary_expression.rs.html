@@ -23,8 +23,10 @@
 <span id="20">20</span>
 <span id="21">21</span>
 <span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="kw">super</span><span class="ident">::AstNode</span>;
+<span class="kw">use</span> <span class="kw">super</span>::<span class="kw">super</span>::{<span class="ident">AstNode</span>, <span class="ident">ExpressionsOwner</span>};
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::syn::cst</span>::{<span class="ident">SyntaxNode</span>, <span class="ident">SyntaxKind</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
@@ -46,6 +48,8 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">syntax</span>
     }
 }
+
+<span class="kw">impl</span> <span class="ident">ExpressionsOwner</span> <span class="kw">for</span> <span class="ident">BinaryExpression</span> {}
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../../../" data-current-crate="sky_sl" data-search-index-js="../../../../../search-index.js" data-search-js="../../../../../search.js"></div>
     <script src="../../../../../main.js"></script><script src="../../../../../source-script.js"></script><script src="../../../../../source-files.js"></script></body></html>

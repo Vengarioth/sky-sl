@@ -34,7 +34,7 @@
 
 <span class="kw">impl</span> <span class="ident">AstNode</span> <span class="kw">for</span> <span class="ident">PathExpression</span> {
     <span class="kw">fn</span> <span class="ident">can_cast_from</span>(<span class="ident">kind</span>: <span class="ident">SyntaxKind</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SyntaxKind::BinaryExpression</span>
+        <span class="ident">kind</span> <span class="op">=</span><span class="op">=</span> <span class="ident">SyntaxKind::PathExpression</span>
     }
 
     <span class="kw">fn</span> <span class="ident">cast_from</span>(<span class="ident">syntax</span>: <span class="ident">SyntaxNode</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>

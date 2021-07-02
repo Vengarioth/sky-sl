@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Typifier","Helper processor that derives the types of all expressions."]]});

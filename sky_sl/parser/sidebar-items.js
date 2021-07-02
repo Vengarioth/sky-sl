@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ErrorKind",""],["ParseError",""]],"fn":[["parse",""]],"struct":[["Parser",""],["SyntaxError",""]]});
+initSidebarItems({"enum":[["ErrorKind",""]],"fn":[["parse",""],["token_set",""]],"struct":[["Parser",""],["SyntaxError",""]],"type":[["TokenSet",""]]});
