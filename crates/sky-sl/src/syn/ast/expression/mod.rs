@@ -8,6 +8,7 @@ mod group_expression;
 mod index_expression;
 mod literal_expression;
 mod path_expression;
+mod struct_expression;
 
 pub use binary_expression::*;
 pub use call_expression::*;
@@ -16,6 +17,7 @@ pub use group_expression::*;
 pub use index_expression::*;
 pub use literal_expression::*;
 pub use path_expression::*;
+pub use struct_expression::*;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Expression {
@@ -31,6 +33,7 @@ impl AstNode for Expression {
             | SyntaxKind::CallExpression
             | SyntaxKind::FieldAccessExpression
             | SyntaxKind::IndexExpression
+            | SyntaxKind::StructExpression
             | SyntaxKind::PathExpression => true,
             _ => false,
         }
@@ -72,6 +75,9 @@ impl Expression {
             SyntaxKind::PathExpression => ExpressionKind::PathExpression(
                 PathExpression::cast_from(self.syntax().clone()).unwrap(),
             ),
+            SyntaxKind::StructExpression => ExpressionKind::StructExpression(
+                StructExpression::cast_from(self.syntax().clone()).unwrap(),
+            ),
             _ => unreachable!(),
         }
     }
@@ -86,6 +92,7 @@ pub enum ExpressionKind {
     FieldAccessExpression(FieldAccessExpression),
     IndexExpression(IndexExpression),
     PathExpression(PathExpression),
+    StructExpression(StructExpression),
 }
 
 pub trait ExpressionOwner: AstNode {

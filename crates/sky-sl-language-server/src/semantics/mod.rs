@@ -141,6 +141,7 @@ fn visit_expression(expression: Expression, builder: &mut SemanticTokensBuilder)
         ExpressionKind::IndexExpression(index_expression) => visit_index_expression(index_expression, builder),
         ExpressionKind::FieldAccessExpression(field_access_expression) => visit_field_access_expression(field_access_expression, builder),
         ExpressionKind::PathExpression(path_expression) => visit_path_expression(path_expression, builder),
+        ExpressionKind::StructExpression(struct_expression) => visit_struct_expression(struct_expression, builder),
     }
 }
 
@@ -185,5 +186,25 @@ fn visit_index_expression(index_expression: IndexExpression, builder: &mut Seman
 fn visit_field_access_expression(field_access_expression: FieldAccessExpression, builder: &mut SemanticTokensBuilder) {
     for child in field_access_expression.expressions() {
         visit_expression(child, builder);
+    }
+}
+
+fn visit_struct_expression(struct_expression: StructExpression, builder: &mut SemanticTokensBuilder) {
+
+    if let Some(expr) = struct_expression.expression() {
+        // TODO clean up AST
+        builder.build_token(expr.syntax().text_range(), *TokenIndex::STRUCT, *ModifierIndex::NONE);
+    }
+
+    if let Some(fields) = struct_expression.fields() {
+        for field in fields.fields() {
+            if let Some(identifier) = field.identifier() {
+                builder.build_token(identifier.syntax().text_range(), *TokenIndex::PROPERTY, *ModifierIndex::NONE);
+            }
+
+            if let Some(expression) = field.expression() {
+                visit_expression(expression, builder);
+            }
+        }
     }
 }

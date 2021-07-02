@@ -56,6 +56,15 @@ pub enum SyntaxKind {
     /// A postfix index expression e.g. `a[0]`
     IndexExpression,
 
+    /// A struct expression e.g. `MyStruct { a: a, b: b }`
+    StructExpression,
+
+    /// A list of initializers for a struct expression e.g. `{ a: 1.0, b: 2.0 }`
+    StructExpressionFields,
+
+    /// A single struct expression field initializer e.g. `a: 10`
+    StructExpressionField,
+
     /// An operator as part of an expression
     Operator,
 

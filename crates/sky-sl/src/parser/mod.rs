@@ -370,8 +370,6 @@ fn parse_call_expression(checkpoint: Checkpoint, parser: &mut Parser) {
         }
         parser.bump();
     
-        // TODO parse arguments
-    
         while !parser.is_at(SyntaxKind::CloseParen) && !parser.eof() {
             parser.ws();
     
@@ -462,7 +460,15 @@ fn parse_atom_expression(parser: &mut Parser) {
         });
     }
 
+    let checkpoint = parser.checkpoint();
     if let Some(_path) = parse_path_expression(parser) {
+        // TODO move parsers from parse_primary in here
+
+        match parser.ws().current() {
+            SyntaxKind::OpenBrace => parse_struct_expression(checkpoint, parser),
+            _ => {},
+        }
+
         return;
     }
 
@@ -471,6 +477,49 @@ fn parse_atom_expression(parser: &mut Parser) {
     }
 
     return parser.error_and_recover(ErrorKind::Unexpected(parser.current()), &token_set(&[SyntaxKind::Semicolon]));
+}
+
+fn parse_struct_expression(checkpoint: Checkpoint, parser: &mut Parser) {
+    parser.begin_node_at(checkpoint, SyntaxKind::StructExpression);
+    parser.node(SyntaxKind::StructExpressionFields, |parser| {
+        if !parser.is_at(SyntaxKind::OpenBrace) {
+            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBrace), &token_set(&[SyntaxKind::Semicolon]));
+        }
+        parser.bump();
+    
+        while !parser.is_at(SyntaxKind::CloseBrace) && !parser.eof() {
+            parser.ws();
+    
+            if parser.is_at(SyntaxKind::CloseBrace) {
+                break;
+            }
+    
+            parser.node(SyntaxKind::StructExpressionField, |parser| {
+                parse_identifier(parser);
+                parser.ws();
+        
+                if !parser.is_at(SyntaxKind::Colon) {
+                    return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Colon), &token_set(&[SyntaxKind::Semicolon]));
+                }
+                parser.bump();
+                parser.ws();
+        
+                parse_expression(parser);
+            });
+            parser.ws();
+    
+            if !parser.is_at(SyntaxKind::Comma) {
+                break;
+            }
+            parser.bump();
+        }
+    
+        if !parser.is_at(SyntaxKind::CloseBrace) {
+            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseBrace), &token_set(&[SyntaxKind::Semicolon]));
+        }
+        parser.bump();
+    });
+    parser.end_node();
 }
 
 fn parse_operator(parser: &mut Parser) -> Option<Operator> {
@@ -567,6 +616,10 @@ mod tests {
         "a.b[0]",
         "a.b[0].c",
         "a = b(1.0, 1.0, 1.0, 1.0)",
+        "MyStruct { }",
+        "MyStruct { a: 1.0, b: c }",
+        "MyStruct { a: 1.0, b: c, }",
+        "MyStruct { a: 1.0 * 2.0 + (a[0] + c(5, 4, 3)), b: c, }",
     ];
 
     // A list of incomplete expressions, to test that the parser terminates
