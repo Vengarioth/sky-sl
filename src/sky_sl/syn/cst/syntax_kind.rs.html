@@ -359,6 +359,12 @@
 <span id="356">356</span>
 <span id="357">357</span>
 <span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u16</span>)]</span>
@@ -379,11 +385,17 @@
     <span class="doccomment">/// A function</span>
     <span class="ident">Fn</span>,
 
+    <span class="doccomment">/// A function signature e.g. `fn example(argument: ArgumentType) -&gt; ReturnType`</span>
+    <span class="ident">FnSignature</span>,
+
     <span class="doccomment">/// A list of arguments</span>
     <span class="ident">ArgumentList</span>,
 
     <span class="doccomment">/// A single argument</span>
     <span class="ident">Argument</span>,
+
+    <span class="doccomment">/// A return type declaration e.g. `-&gt; SomeType`</span>
+    <span class="ident">ReturnType</span>,
 
     <span class="doccomment">/// Block</span>
     <span class="ident">Block</span>,

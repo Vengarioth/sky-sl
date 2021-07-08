@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Function",""],["Structure",""]]});
+initSidebarItems({"enum":[["ItemKind",""],["ItemPathData",""],["TyKind",""],["TyPathData",""]],"mod":[["lower",""]],"struct":[["Block",""],["FunctionArgument",""],["FunctionKind",""],["FunctionSignature",""],["ItemPath",""],["Module",""],["StructureKind",""],["TyPath",""]]});

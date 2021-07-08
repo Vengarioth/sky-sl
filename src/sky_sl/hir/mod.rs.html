@@ -26,31 +26,55 @@
 <span id="23">23</span>
 <span id="24">24</span>
 <span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Function</span> {
+<span class="kw">use</span> <span class="ident">salsa::InternId</span>;
 
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">lower</span>;
+
+<span class="kw">mod</span> <span class="ident">block</span>;
+<span class="kw">mod</span> <span class="ident">function</span>;
+<span class="kw">mod</span> <span class="ident">module</span>;
+<span class="kw">mod</span> <span class="ident">structure</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">block</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">function</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">module</span>::<span class="kw-2">*</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">structure</span>::<span class="kw-2">*</span>;
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TyPath</span>(<span class="ident">InternId</span>);
+
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TyPathData</span> {
+    <span class="ident">Root</span>(<span class="ident">String</span>),
+    <span class="ident">Child</span>(<span class="ident">TyPath</span>, <span class="ident">String</span>),
 }
 
-<span class="kw">impl</span> <span class="ident">Function</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            
-        }
-    }
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TyKind</span> {
+    <span class="ident">Path</span>(<span class="ident">TyPath</span>),
+    <span class="ident">Infer</span>,
+    <span class="prelude-val">Err</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Structure</span> {
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ItemPath</span>(<span class="ident">InternId</span>);
 
-}
-
-<span class="kw">impl</span> <span class="ident">Structure</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            
-        }
-    }
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ItemPathData</span> {
+    <span class="ident">Root</span>(<span class="ident">String</span>),
+    <span class="ident">Child</span>(<span class="ident">ItemPath</span>, <span class="ident">String</span>),
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="sky_sl" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div>

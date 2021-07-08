@@ -137,6 +137,12 @@
 <span id="134">134</span>
 <span id="135">135</span>
 <span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">lexer::Token</span>, <span class="ident">syn::cst</span>::<span class="kw-2">*</span>, <span class="ident">syn::Parse</span>, <span class="ident">syn::ast::Root</span>};
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">ErrorKind</span>, <span class="ident">SyntaxError</span>, <span class="ident">TokenSet</span>};
@@ -245,6 +251,12 @@
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">begin_node_at</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">checkpoint</span>: <span class="ident">Checkpoint</span>, <span class="ident">kind</span>: <span class="ident">SyntaxKind</span>) {
         <span class="self">self</span>.<span class="ident">builder</span>.<span class="ident">start_node_at</span>(<span class="ident">checkpoint</span>, <span class="ident">kind</span>.<span class="ident">into</span>());
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">node_at</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">checkpoint</span>: <span class="ident">Checkpoint</span>, <span class="ident">kind</span>: <span class="ident">SyntaxKind</span>, <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>)) {
+        <span class="self">self</span>.<span class="ident">begin_node_at</span>(<span class="ident">checkpoint</span>, <span class="ident">kind</span>);
+        <span class="ident">f</span>(<span class="self">self</span>);
+        <span class="self">self</span>.<span class="ident">end_node</span>();
     }
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">node</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">kind</span>: <span class="ident">SyntaxKind</span>, <span class="ident">f</span>: <span class="kw">impl</span> <span class="ident">Fn</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">Self</span>)) {
