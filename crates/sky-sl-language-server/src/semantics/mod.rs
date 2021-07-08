@@ -41,17 +41,25 @@ fn visit_root(root: Root, builder: &mut SemanticTokensBuilder) {
 }
 
 fn visit_function_definition(function_definition: FunctionDefinition, builder: &mut SemanticTokensBuilder) {
-    if let Some(keyword) = function_definition.syntax().first_token() {
-        builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
-    }
-
-    if let Some(identifier) = function_definition.identifier() {
-        let syntax = identifier.syntax();
-        builder.build_token(syntax.text_range(), *TokenIndex::FUNCTION, *ModifierIndex::DECLARATION);
-    }
-
-    if let Some(argument_list) = function_definition.argument_list() {
-        visit_argument_list(argument_list, builder)
+    if let Some(signature) = function_definition.signature() {
+        if let Some(keyword) = function_definition.syntax().first_token() {
+            builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+        }
+    
+        if let Some(identifier) = signature.identifier() {
+            let syntax = identifier.syntax();
+            builder.build_token(syntax.text_range(), *TokenIndex::FUNCTION, *ModifierIndex::DECLARATION);
+        }
+    
+        if let Some(argument_list) = signature.argument_list() {
+            visit_argument_list(argument_list, builder)
+        }
+    
+        if let Some(return_type) = signature.return_type() {
+            if let Some(type_identifier) = return_type.type_identifier() {
+                builder.build_token(type_identifier.syntax().text_range(), *TokenIndex::TYPE, *ModifierIndex::NONE);
+            }
+        }
     }
 
     if let Some(block) = function_definition.block_definition() {

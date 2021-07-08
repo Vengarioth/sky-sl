@@ -1,6 +1,6 @@
 use super::*;
 
-#[salsa::database(SourceDatabaseStorage, SyntaxDatabaseStorage)]
+#[salsa::database(SourceDatabaseStorage, SyntaxDatabaseStorage, HirDatabaseStorage)]
 #[derive(Default)]
 pub struct CompilerDatabase {
     storage: salsa::Storage<CompilerDatabase>,

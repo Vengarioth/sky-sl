@@ -131,6 +131,28 @@ fn parse_member(parser: &mut Parser) {
 fn parse_function(parser: &mut Parser) {
     // we already know we want to parse a function
     parser.node(SyntaxKind::Fn, |parser| {
+        parse_function_signature(parser);
+
+        parser.bump_if(SyntaxKind::Whitespace);
+        if !parser.is_at(SyntaxKind::OpenBrace) {
+            parser.emit_error(ErrorKind::NotFound(SyntaxKind::OpenBrace));
+        } else {
+            parser.bump();
+        }
+
+        parse_block(parser);
+
+        parser.bump_if(SyntaxKind::Whitespace);
+        if !parser.is_at(SyntaxKind::CloseBrace) {
+            parser.emit_error(ErrorKind::NotFound(SyntaxKind::CloseBrace));
+        } else {
+            parser.bump();
+        }
+    });
+}
+
+fn parse_function_signature(parser: &mut Parser) {
+    parser.node(SyntaxKind::FnSignature, |parser| {
         // consume the fn keyword
         parser.bump();
 
@@ -152,20 +174,22 @@ fn parse_function(parser: &mut Parser) {
             parser.bump();
         }
 
-        parser.bump_if(SyntaxKind::Whitespace);
-        if !parser.is_at(SyntaxKind::OpenBrace) {
-            parser.emit_error(ErrorKind::NotFound(SyntaxKind::OpenBrace));
-        } else {
-            parser.bump();
-        }
+        // Parse optional return type e.g. `-> SomeType`
+        if parser.ws().current() == SyntaxKind::Minus {
+            parser.node(SyntaxKind::ReturnType, |parser| {
+                // consume `-`
+                parser.bump();
 
-        parse_block(parser);
+                // parse `>`
+                if !parser.is_at(SyntaxKind::GreatherThan) {
+                    parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::GreatherThan), &token_set(&[]));
+                    return;
+                }
+                parser.bump();
 
-        parser.bump_if(SyntaxKind::Whitespace);
-        if !parser.is_at(SyntaxKind::CloseBrace) {
-            parser.emit_error(ErrorKind::NotFound(SyntaxKind::CloseBrace));
-        } else {
-            parser.bump();
+                // parse ty
+                parse_type_identifier(parser);
+            });
         }
     });
 }
@@ -199,8 +223,11 @@ fn parse_argument(parser: &mut Parser) {
     parser.node(SyntaxKind::Argument, |parser| {
         parse_identifier(parser);
 
-        parser.bump_if(SyntaxKind::Whitespace);
-        parser.bump_if(SyntaxKind::Colon);
+        if parser.ws().current() != SyntaxKind::Colon {
+            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Colon), &token_set(&[SyntaxKind::Comma, SyntaxKind::Identifier, SyntaxKind::CloseParen]));
+        } else {
+            parser.bump();
+        }
 
         parser.bump_if(SyntaxKind::Whitespace);
         // TODO proper type identifier
@@ -210,28 +237,22 @@ fn parse_argument(parser: &mut Parser) {
 
 /// Parses an identifier
 fn parse_identifier(parser: &mut Parser) {
-    parser.bump_if(SyntaxKind::Whitespace);
-
-    parser.node(SyntaxKind::Identifier, |parser| {
-        if !parser.is_at(SyntaxKind::Identifier) {
-            parser.emit_error(ErrorKind::NotFound(SyntaxKind::Identifier));
-        } else {
-            parser.bump();
-        }
-    });
+    let current = parser.ws().current();
+    if current != SyntaxKind::Identifier {
+        parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Identifier), &token_set(&[SyntaxKind::OpenParen, SyntaxKind::CloseParen]));
+    } else {
+        parser.node(SyntaxKind::Identifier, |parser| parser.bump());
+    }
 }
 
 fn parse_type_identifier(parser: &mut Parser) {
-    // TODO
-    parser.bump_if(SyntaxKind::Whitespace);
+    let current = parser.ws().current();
+    if current != SyntaxKind::Identifier {
+        parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Identifier), &token_set(&[SyntaxKind::Comma, SyntaxKind::CloseParen]));
+        return;
+    }
 
-    parser.node(SyntaxKind::TypeIdentifier, |parser| {
-        if !parser.is_at(SyntaxKind::Identifier) {
-            parser.emit_error(ErrorKind::NotFound(SyntaxKind::Identifier));
-        } else {
-            parser.bump();
-        }
-    });
+    parser.node(SyntaxKind::TypeIdentifier, |parser| parser.bump());
 }
 
 /// Parses a block of statements
@@ -620,6 +641,8 @@ mod tests {
         "MyStruct { a: 1.0, b: c }",
         "MyStruct { a: 1.0, b: c, }",
         "MyStruct { a: 1.0 * 2.0 + (a[0] + c(5, 4, 3)), b: c, }",
+        "(a + b)()",
+        "a[0]()",
     ];
 
     // A list of incomplete expressions, to test that the parser terminates
@@ -656,5 +679,39 @@ mod tests {
             let parsed = parse(&token, &input);
             assert!(parsed.errors().len() != 0);
         }
+    }
+
+    #[test]
+    fn functions_have_return_types() {
+        let input = "fn foo() -> Bar {}";
+        let token = tokenize(input);
+        let parsed = parse(&token, input);
+        assert!(parsed.errors().len() == 0);
+    }
+
+    #[test]
+    fn it_parses_a_fn_while_writing() {
+        let input = "fn foo() -> Bar { let a = b; }";
+        let mut current = String::new();
+        for c in input.chars() {
+
+            let token = tokenize(&current);
+            let parsed = parse(&token, &current);
+            dbg!(&current, parsed.tree());
+
+            current.push(c);
+        }
+
+        let token = tokenize(&current);
+        let parsed = parse(&token, &current);
+        dbg!(&current, parsed.tree());
+    }
+
+    #[test]
+    fn debug_issues() {
+        let input = "fn foo() {}";
+        let token = tokenize(input);
+        let parsed = parse(&token, input);
+        dbg!(parsed.errors(), parsed.tree());
     }
 }

@@ -153,27 +153,30 @@ impl LanguageServer for Backend {
                 Position::new(end.line, end.column),
             );
 
-            if let Some(identifier) = fn_definition.identifier() {
-                let selection_range = identifier.syntax().text_range();
-                let start = line_index.find_position(selection_range.start());
-                let end = line_index.find_position(selection_range.end());
-                let selection_range = Range::new(
-                    Position::new(start.line, start.column),
-                    Position::new(end.line, end.column),
-                );
+            if let Some(signature) = fn_definition.signature() {
 
-                #[allow(deprecated)]
-                let symbol = DocumentSymbol {
-                    name: identifier.syntax().to_string(),
-                    detail: None,
-                    kind: SymbolKind::Function,
-                    tags: None,
-                    range,
-                    selection_range,
-                    children: None,
-                    deprecated: None,
-                };
-                symbols.push(symbol);
+                if let Some(identifier) = signature.identifier() {
+                    let selection_range = identifier.syntax().text_range();
+                    let start = line_index.find_position(selection_range.start());
+                    let end = line_index.find_position(selection_range.end());
+                    let selection_range = Range::new(
+                        Position::new(start.line, start.column),
+                        Position::new(end.line, end.column),
+                    );
+    
+                    #[allow(deprecated)]
+                    let symbol = DocumentSymbol {
+                        name: identifier.syntax().to_string(),
+                        detail: None,
+                        kind: SymbolKind::Function,
+                        tags: None,
+                        range,
+                        selection_range,
+                        children: None,
+                        deprecated: None,
+                    };
+                    symbols.push(symbol);
+                }
             }
         }
 

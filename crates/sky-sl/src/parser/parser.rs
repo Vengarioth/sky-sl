@@ -107,6 +107,12 @@ impl<'a> Parser<'a> {
         self.builder.start_node_at(checkpoint, kind.into());
     }
 
+    pub fn node_at(&mut self, checkpoint: Checkpoint, kind: SyntaxKind, f: impl Fn(&mut Self)) {
+        self.begin_node_at(checkpoint, kind);
+        f(self);
+        self.end_node();
+    }
+
     pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self)) {
         self.begin_node(kind);
         f(self);

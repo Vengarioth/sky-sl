@@ -17,11 +17,17 @@ pub enum SyntaxKind {
     /// A function
     Fn,
 
+    /// A function signature e.g. `fn example(argument: ArgumentType) -> ReturnType`
+    FnSignature,
+
     /// A list of arguments
     ArgumentList,
 
     /// A single argument
     Argument,
+
+    /// A return type declaration e.g. `-> SomeType`
+    ReturnType,
 
     /// Block
     Block,
