@@ -341,17 +341,31 @@ fn parse_expression_statement(parser: &mut Parser) {
 
 /// Entry point to parsing expressions
 fn parse_expression(parser: &mut Parser) {
-    parse_binary_expression(parser);
+    parse_binary_expression(parser, 1);
 }
 
-fn parse_binary_expression(parser: &mut Parser) {
+fn parse_binary_expression(parser: &mut Parser, min_precedence: u8) {
+    parser.ws();
+
     let checkpoint = parser.checkpoint();
     parse_primary_expression(parser);
         
-    while let Some(_operator) = parse_operator(parser) {
-        parser.begin_node_at(checkpoint, SyntaxKind::BinaryExpression);
+    while let Some(operator) = peek_operator(parser) {
+        if operator.precedence() < min_precedence {
+            break;
+        }
 
-        parse_expression(parser);
+        let next_min_prec = if operator.associativity().left() {
+            operator.precedence() + 1
+        } else {
+            operator.precedence()
+        };
+
+        // consume operator
+        parser.node(SyntaxKind::Operator, |parser| parser.bump());
+
+        parser.begin_node_at(checkpoint, SyntaxKind::BinaryExpression);
+        parse_binary_expression(parser, next_min_prec);
         parser.end_node();
     }
 }
@@ -465,7 +479,6 @@ fn parse_field_access_expression(checkpoint: Checkpoint, parser: &mut Parser) {
 }
 
 fn parse_atom_expression(parser: &mut Parser) {
-
     let current = parser.ws().current();
 
     if current == SyntaxKind::OpenParen {
@@ -543,17 +556,17 @@ fn parse_struct_expression(checkpoint: Checkpoint, parser: &mut Parser) {
     parser.end_node();
 }
 
-fn parse_operator(parser: &mut Parser) -> Option<Operator> {
+fn peek_operator(parser: &mut Parser) -> Option<Operator> {
     let current = parser.ws().current();
     let next = parser.next();
 
+    // TODO
     match (current, next) {
         (SyntaxKind::Equals, Some(SyntaxKind::Equals)) => {},
         _ => {},
     }
 
     if let Some(operator) = current.operator() {
-        parser.node(SyntaxKind::Operator, |parser| parser.bump());
         return Some(operator);
     }
 

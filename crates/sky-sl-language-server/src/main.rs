@@ -1,6 +1,7 @@
-use camino::Utf8PathBuf;
-use serde_json::Value;
 use sky_sl::syn::ast::*;
+use camino::Utf8PathBuf;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::sync::Arc;
 use tower_lsp::jsonrpc::*;
 use tower_lsp::lsp_types::*;
@@ -10,6 +11,12 @@ mod semantics;
 mod workspaces;
 
 use workspaces::Workspaces;
+
+#[derive(Debug, Deserialize, Serialize)]
+struct SyntaxTreeParams {
+    text_ocument: TextDocumentIdentifier,
+    range: Option<Range>,
+}
 
 struct Backend {
     client: Client,
@@ -330,6 +337,7 @@ async fn main() {
         client,
         workspaces: Workspaces::new(),
     });
+
     Server::new(stdin, stdout)
         .interleave(messages)
         .serve(service)

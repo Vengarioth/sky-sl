@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { workspace, ExtensionContext, window } from 'vscode';
 import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import { AstProvider, syntaxTree } from './ast-view';
 
 let client: LanguageClient;
 
@@ -31,6 +32,14 @@ export function activate(context: ExtensionContext) {
     client = new LanguageClient('sky-sl', 'skysl language server', serverOptions, clientOptions);
 
     client.start();
+
+    client.onReady().then(() => {
+        const params = { textDocument: { uri: "" }, range: null, };
+        client.sendRequest(syntaxTree, params);
+        window.createTreeView('sky-sl-ast-view', {
+            treeDataProvider: new AstProvider(workspace.rootPath),
+        });
+    });
 }
 
 export function deactivate(): Thenable<void> | undefined {

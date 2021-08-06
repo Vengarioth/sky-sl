@@ -1,37 +1,27 @@
 use salsa::InternId;
 
 pub mod lower;
+pub mod type_check;
+pub mod typed;
+pub mod untyped;
 
-mod block;
-mod function;
-mod module;
-mod structure;
+#[cfg(test)]
+mod tests {
+    use crate::db::*;
+    use camino::Utf8PathBuf;
+    use std::str::FromStr;
+    use std::sync::Arc;
 
-pub use block::*;
-pub use function::*;
-pub use module::*;
-pub use structure::*;
+    #[test]
+    fn it_works() {
+        let mut db = CompilerDatabase::default();
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct TyPath(InternId);
+        let path = Utf8PathBuf::from_str("/foo/bar").unwrap();
+        let input = "fn foo() { let a = 1 + 2 * 3; }".to_string();
+        db.set_input_file(path.clone(), Arc::from(input));
+        let hir = db.hir(path);
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum TyPathData {
-    Root(String),
-    Child(TyPath, String),
-}
-
-pub enum TyKind {
-    Path(TyPath),
-    Infer,
-    Err,
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub struct ItemPath(InternId);
-
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub enum ItemPathData {
-    Root(String),
-    Child(ItemPath, String),
+        dbg!(hir);
+        // panic!();
+    }
 }

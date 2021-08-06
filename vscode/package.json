@@ -28,7 +28,15 @@
 				],
 				"configuration": "./language-configuration.json"
 			}
-		]
+		],
+		"views": {
+			"explorer": [
+				{
+					"id": "sky-sl-ast-view",
+					"name": "SkySL AST"
+				}
+			]
+		}
 	},
 	"configurationDefaults": {
 		"skysl": {

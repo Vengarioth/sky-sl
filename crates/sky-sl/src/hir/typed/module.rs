@@ -1,19 +1,20 @@
-use super::{FunctionKind, StructureKind, lower::LowerToHirError};
+use super::{FunctionKind};
+use crate::hir::type_check::{TypeCheckError};
 use rowan::TextRange;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Module {
     pub items: Vec<ItemKind>,
-    pub errors: Vec<LowerToHirError>,
+    pub errors: Vec<TypeCheckError>,
     pub span: TextRange,
 }
 
 impl Module {
-    pub fn new(items: Vec<ItemKind>, errors: Vec<LowerToHirError>, span: TextRange) -> Self {
+    pub fn new(items: Vec<ItemKind>, errors: Vec<TypeCheckError>, span: TextRange) -> Self {
         Self {
-            span,
-            errors,
             items,
+            errors,
+            span,
         }
     }
 }
@@ -21,5 +22,4 @@ impl Module {
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ItemKind {
     Function(FunctionKind),
-    Structure(StructureKind),
 }

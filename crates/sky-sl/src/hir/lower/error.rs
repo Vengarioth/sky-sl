@@ -8,4 +8,16 @@ pub enum LowerToHirError {
 
     #[error("Incomplete function signature")]
     IncompleteFunctionSignature,
+
+    #[error("Incomplete function body")]
+    IncompleteFunctionBody,
+
+    #[error("Incomplete struct declaration")]
+    IncompleteStructDeclaration,
+
+    #[error("Incomplete statement")]
+    IncompleteStatement,
+
+    #[error("Incomplete expression")]
+    IncompleteExpression,
 }

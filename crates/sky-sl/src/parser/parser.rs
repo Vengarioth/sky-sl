@@ -37,6 +37,10 @@ impl<'a> Parser<'a> {
         self.token[0].kind()
     }
 
+    pub fn current_char(&self) -> Option<char> {
+        self.input.chars().nth(0)
+    }
+
     pub fn next(&self) -> Option<SyntaxKind> {
         if self.token.len() < 2 {
             return None;

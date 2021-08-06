@@ -309,18 +309,18 @@ impl Operator {
     pub fn precedence(self) -> u8 {
         // TODO
         match self {
-            Operator::Assign => 0,
+            Operator::Assign => 1,
 
-            Operator::Add => 0,
-            Operator::Subtract => 0,
-            Operator::Multiply => 0,
-            Operator::Divide => 0,
+            Operator::Add => 1,
+            Operator::Subtract => 1,
+            Operator::Multiply => 2,
+            Operator::Divide => 2,
 
-            Operator::Remainder => 0,
+            Operator::Remainder => 1,
 
-            Operator::And => 0,
-            Operator::Or => 0,
-            Operator::XOr => 0,
+            Operator::And => 1,
+            Operator::Or => 1,
+            Operator::XOr => 1,
         }
     }
 

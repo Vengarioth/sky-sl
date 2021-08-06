@@ -2,11 +2,13 @@ mod source;
 mod storage;
 mod syntax;
 mod hir;
+mod ty;
 
 pub use source::*;
 pub use storage::*;
 pub use syntax::*;
 pub use hir::*;
+pub use ty::*;
 
 #[cfg(test)]
 mod tests {
