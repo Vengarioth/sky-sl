@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ItemKind",""],["ItemPathData",""],["TyKind",""],["TyPathData",""]],"mod":[["lower",""]],"struct":[["Block",""],["FunctionArgument",""],["FunctionKind",""],["FunctionSignature",""],["ItemPath",""],["Module",""],["StructureKind",""],["TyPath",""]]});
+initSidebarItems({"mod":[["lower",""],["type_check",""],["typed",""],["untyped",""]]});

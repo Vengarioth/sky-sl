@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["sky_sl"] = [{"text":"impl <a class=\"trait\" href=\"salsa/interned/trait.InternKey.html\" title=\"trait salsa::interned::InternKey\">InternKey</a> for <a class=\"struct\" href=\"sky_sl/db/struct.TyPath.html\" title=\"struct sky_sl::db::TyPath\">TyPath</a>","synthetic":false,"types":["sky_sl::db::ty::TyPath"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
