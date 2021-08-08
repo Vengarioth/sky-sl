@@ -44,10 +44,23 @@
 <span id="42">42</span>
 <span id="43">43</span>
 <span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
 </pre><pre class="rust">
+<span class="kw">use</span> <span class="ident">rowan::TextSize</span>;
 <span class="kw">use</span> <span class="ident">salsa</span>::{<span class="ident">InternId</span>, <span class="ident">InternKey</span>};
 <span class="kw">use</span> <span class="ident">camino::Utf8PathBuf</span>;
-<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::hir</span>::{<span class="ident">typed</span>, <span class="ident">type_check</span>::{<span class="ident">Env</span>, <span class="ident">infer_module</span>}};
+<span class="kw">use</span> <span class="kw">crate</span><span class="ident">::hir</span>::{<span class="ident">typed</span>, <span class="ident">type_check</span>::{<span class="ident">Env</span>, <span class="ident">infer_module</span>, <span class="ident">Ty</span>}};
 
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 
@@ -57,6 +70,8 @@
     <span class="kw">fn</span> <span class="ident">intern_ty_path_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">data</span>: <span class="ident">TyPathData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TyPath</span>;
 
     <span class="kw">fn</span> <span class="ident">types</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="ident">Utf8PathBuf</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">typed::Module</span>;
+
+    <span class="kw">fn</span> <span class="ident">type_at</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="ident">Utf8PathBuf</span>, <span class="ident">line</span>: <span class="ident">u32</span>, <span class="ident">character</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ty</span><span class="op">&gt;</span>;
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Hash</span>)]</span>
@@ -88,6 +103,15 @@
     <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">hir</span>(<span class="ident">name</span>);
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">env</span> <span class="op">=</span> <span class="ident">Env::empty</span>();
     <span class="ident">infer_module</span>(<span class="kw-2">&amp;</span><span class="ident">module</span>, <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">env</span>)
+}
+
+<span class="kw">fn</span> <span class="ident">type_at</span>(<span class="ident">db</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">TyDatabase</span>, <span class="ident">name</span>: <span class="ident">Utf8PathBuf</span>, <span class="ident">line</span>: <span class="ident">u32</span>, <span class="ident">character</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ty</span><span class="op">&gt;</span> {
+    <span class="kw">let</span> <span class="ident">module</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">types</span>(<span class="ident">name</span>.<span class="ident">clone</span>());
+    <span class="kw">let</span> <span class="ident">line_index</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">line_index</span>(<span class="ident">name</span>);
+
+    <span class="kw">let</span> <span class="ident">offset</span> <span class="op">=</span> <span class="ident">line_index</span>.<span class="ident">find_offset</span>(<span class="ident">line</span>, <span class="ident">character</span>);
+
+    <span class="ident">module</span>.<span class="ident">find_ty</span>(<span class="ident">offset</span>)
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="sky_sl" data-search-index-js="../../../search-index.js" data-search-js="../../../search.js"></div><script src="../../../main.js"></script><script src="../../../source-script.js"></script><script src="../../../source-files.js"></script></body></html>

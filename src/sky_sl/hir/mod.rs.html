@@ -22,14 +22,7 @@
 <span id="20">20</span>
 <span id="21">21</span>
 <span id="22">22</span>
-<span id="23">23</span>
-<span id="24">24</span>
-<span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
 </pre><pre class="rust">
-<span class="kw">use</span> <span class="ident">salsa::InternId</span>;
-
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">lower</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">type_check</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">typed</span>;
@@ -49,10 +42,7 @@
         <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">Utf8PathBuf::from_str</span>(<span class="string">&quot;/foo/bar&quot;</span>).<span class="ident">unwrap</span>();
         <span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> <span class="string">&quot;fn foo() { let a = 1 + 2 * 3; }&quot;</span>.<span class="ident">to_string</span>();
         <span class="ident">db</span>.<span class="ident">set_input_file</span>(<span class="ident">path</span>.<span class="ident">clone</span>(), <span class="ident">Arc::from</span>(<span class="ident">input</span>));
-        <span class="kw">let</span> <span class="ident">hir</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">hir</span>(<span class="ident">path</span>);
-
-        <span class="macro">dbg!</span>(<span class="ident">hir</span>);
-        <span class="comment">// panic!();</span>
+        <span class="kw">let</span> <span class="ident">_hir</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">hir</span>(<span class="ident">path</span>);
     }
 }
 </pre></div>

@@ -60,27 +60,61 @@
 <span id="58">58</span>
 <span id="59">59</span>
 <span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
 </pre><pre class="rust">
 <span class="kw">use</span> <span class="kw">crate</span><span class="ident">::hir::type_check::Ty</span>;
 <span class="kw">use</span> <span class="kw">super</span><span class="ident">::Block</span>;
-<span class="kw">use</span> <span class="ident">rowan::TextRange</span>;
+<span class="kw">use</span> <span class="ident">rowan</span>::{<span class="ident">TextRange</span>, <span class="ident">TextSize</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FunctionKind</span> {
-    <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">Ty</span>,
     <span class="kw">pub</span> <span class="ident">signature</span>: <span class="ident">FunctionSignature</span>,
     <span class="kw">pub</span> <span class="ident">block</span>: <span class="ident">Block</span>,
+    <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">Ty</span>,
     <span class="kw">pub</span> <span class="ident">span</span>: <span class="ident">TextRange</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FunctionKind</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">ty</span>: <span class="ident">Ty</span>, <span class="ident">signature</span>: <span class="ident">FunctionSignature</span>, <span class="ident">block</span>: <span class="ident">Block</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">signature</span>: <span class="ident">FunctionSignature</span>, <span class="ident">block</span>: <span class="ident">Block</span>, <span class="ident">ty</span>: <span class="ident">Ty</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
-            <span class="ident">ty</span>,
             <span class="ident">signature</span>,
             <span class="ident">block</span>,
+            <span class="ident">ty</span>,
             <span class="ident">span</span>,
         }
+    }
+
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_ty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">TextSize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Ty</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">signature</span>.<span class="ident">span</span>.<span class="ident">contains</span>(<span class="ident">offset</span>) {
+            <span class="kw">for</span> <span class="ident">argument</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">signature</span>.<span class="ident">arguments</span> {
+                <span class="kw">if</span> <span class="ident">argument</span>.<span class="ident">span</span>.<span class="ident">contains</span>(<span class="ident">offset</span>) {
+                    <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">argument</span>.<span class="ident">ty</span>);
+                }
+            }
+
+            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">ty</span>);
+        }
+
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">block</span>.<span class="ident">span</span>.<span class="ident">contains</span>(<span class="ident">offset</span>) {
+            <span class="kw">return</span> <span class="self">self</span>.<span class="ident">block</span>.<span class="ident">find_ty</span>(<span class="ident">offset</span>);
+        }
+
+        <span class="kw">return</span> <span class="prelude-val">None</span>;
     }
 }
 
@@ -88,12 +122,12 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FunctionSignature</span> {
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">arguments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FunctionArgument</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">return_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">return_type</span>: <span class="ident">Ty</span>,
     <span class="kw">pub</span> <span class="ident">span</span>: <span class="ident">TextRange</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FunctionSignature</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">arguments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FunctionArgument</span><span class="op">&gt;</span>, <span class="ident">return_type</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">arguments</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">FunctionArgument</span><span class="op">&gt;</span>, <span class="ident">return_type</span>: <span class="ident">Ty</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">name</span>,
             <span class="ident">arguments</span>,
@@ -106,16 +140,14 @@
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FunctionArgument</span> {
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span> <span class="ident">ty_name</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">ty</span>: <span class="ident">Ty</span>,
     <span class="kw">pub</span> <span class="ident">span</span>: <span class="ident">TextRange</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">FunctionArgument</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">ty_name</span>: <span class="ident">String</span>, <span class="ident">ty</span>: <span class="ident">Ty</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">ty</span>: <span class="ident">Ty</span>, <span class="ident">span</span>: <span class="ident">TextRange</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">name</span>,
-            <span class="ident">ty_name</span>,
             <span class="ident">ty</span>,
             <span class="ident">span</span>,
         }
