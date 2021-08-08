@@ -1,5 +1,6 @@
+use crate::hir::type_check::Ty;
 use super::StatementKind;
-use rowan::TextRange;
+use rowan::{TextRange, TextSize};
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Block {
@@ -13,5 +14,15 @@ impl Block {
             statements,
             span,
         }
+    }
+
+    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+        for statement in &self.statements {
+            if statement.span().contains(offset) {
+                return statement.find_ty(offset);
+            }
+        }
+
+        return None;
     }
 }

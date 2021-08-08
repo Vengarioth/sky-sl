@@ -1,4 +1,4 @@
-use crate::hir::{untyped, typed};
+use crate::hir::{typed, untyped};
 use std::collections::HashMap;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -83,7 +83,8 @@ pub fn infer_module(module: &untyped::Module, env: &mut Env) -> typed::Module {
         match item {
             untyped::ItemKind::Function(function) => {
                 env.push_scope();
-                infer_function(function, env);
+                let function = infer_function(function, env);
+                items.push(typed::ItemKind::Function(function));
                 env.pop_scope();
             },
             _ => {},
@@ -93,47 +94,93 @@ pub fn infer_module(module: &untyped::Module, env: &mut Env) -> typed::Module {
     typed::Module::new(items, errors, module.span)
 }
 
-pub fn infer_function(function: &untyped::FunctionKind, env: &mut Env) {
+pub fn infer_function(function: &untyped::FunctionKind, env: &mut Env) -> typed::FunctionKind {
+    let ty = env.intern_ty(&function.signature.name);
+    
+    let mut arguments = Vec::new();
     // add arguments to env
     for argument in &function.signature.arguments {
         let ty = env.intern_ty(&argument.ty_name);
         env.insert(&argument.name, ty);
+        arguments.push(typed::FunctionArgument::new(
+            argument.name.to_string(),
+            ty,
+            argument.span,
+        ));
     }
 
-    // infer statements
-    for statement in &function.block.statements {
-        infer_statement(statement, env);
-    }
+    let return_type = if let Some(return_type) = &function.signature.return_type {
+        env.intern_ty(return_type)
+    } else {
+        env.intern_ty("()")
+    };
 
+    let signature = typed::FunctionSignature::new(
+        function.signature.name.to_string(),
+        arguments,
+        return_type,
+        function.signature.span,
+    );
+
+    // infer block
     // TODO block return type
+    let block = infer_block(&function.block, env);
+
+    typed::FunctionKind::new(signature, block, ty, function.span)
 }
 
-pub fn infer_statement(statement: &untyped::StatementKind, env: &mut Env) {
+pub fn infer_block(block: &untyped::Block, env: &mut Env) -> typed::Block {
+    let mut statements = Vec::new();
+    for statement in &block.statements {
+        let statement = infer_statement(statement, env);
+        statements.push(statement);
+    }
+
+    typed::Block::new(statements, block.span)
+}
+
+pub fn infer_statement(statement: &untyped::StatementKind, env: &mut Env) -> typed::StatementKind {
     match statement {
         untyped::StatementKind::Let(let_statement) => {
-            // infer expression
-            // add binding name to env
             env.push_scope();
-            let ty = infer_expression(&let_statement.expression, env);
+            // infer expression
+            let expr = infer_expression(&let_statement.expression, env);
+            let ty = expr.ty();
             env.pop_scope();
+
+            // add local variable to the env
             env.insert(&let_statement.name, ty);
+
+            typed::StatementKind::Let(typed::LetStatement::new(
+                let_statement.name.to_string(),
+                expr,
+                ty,
+                let_statement.span,
+            ))
         },
         untyped::StatementKind::Expression(expression_statement) => {
             // infer expression
             env.push_scope();
-            infer_expression(&expression_statement.expression, env);
+            let expr = infer_expression(&expression_statement.expression, env);
+            let ty = expr.ty();
             env.pop_scope();
+
+            typed::StatementKind::Expression(typed::ExpressionStatement::new(
+                expr,
+                ty,
+                expression_statement.span,
+            ))
         },
     }
 }
 
-pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> Ty {
+pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> typed::ExpressionKind {
     match expression {
-        untyped::ExpressionKind::LiteralExpression(_) => {
+        untyped::ExpressionKind::LiteralExpression(literal_expression) => {
             // primitive type
             // TODO float vs int vs boolean literals
             let ty = env.intern_ty("int");
-            ty
+            typed::ExpressionKind::LiteralExpression(typed::LiteralExpression::new(ty, literal_expression.span))
         },
         untyped::ExpressionKind::BinaryExpression(binary_expression) => {
             // infer left
@@ -141,8 +188,15 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
             // infer right
             let rhs = infer_expression(&binary_expression.rhs, env);
 
-            if lhs == rhs {
-                lhs
+            // TODO proper inference of operations
+            if lhs.ty() == rhs.ty() {
+                let ty = lhs.ty();
+                typed::ExpressionKind::BinaryExpression(typed::BinaryExpression::new(
+                    Box::new(lhs),
+                    Box::new(rhs),
+                    ty,
+                    binary_expression.span,
+                ))
             } else {
                 unimplemented!()
             }
@@ -152,8 +206,10 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
         },
         untyped::ExpressionKind::CallExpression(call_expression) => {
             // infer arguments
+            let mut arguments = Vec::new();
             for argument in &call_expression.arguments {
-                let ty = infer_expression(argument, env);
+                let expr = infer_expression(argument, env);
+                arguments.push(expr);
             }
 
             // fn return type
@@ -170,7 +226,11 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
         untyped::ExpressionKind::PathExpression(path_expression) => {
             // variables
             if let Some(ty) = env.lookup(&path_expression.path) {
-                ty
+                typed::ExpressionKind::PathExpression(typed::PathExpression::new(
+                    path_expression.path.to_string(),
+                    ty,
+                    path_expression.span
+                ))
             } else {
                 // not found
                 todo!()
@@ -198,7 +258,11 @@ mod tests {
         let input = "fn foo() { let a = 1.0 + 2.0; let b = 3.0; let c = a + b; }".to_string();
 
         db.set_input_file(path.clone(), Arc::from(input));
-        db.types(path);
+        
+        // let typed = db.types(path);
+        // dbg!(typed);
+
+        dbg!(db.type_at(path.clone(), 0, 0));
 
         panic!();
     }

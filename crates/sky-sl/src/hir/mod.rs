@@ -1,5 +1,3 @@
-use salsa::InternId;
-
 pub mod lower;
 pub mod type_check;
 pub mod typed;
@@ -19,9 +17,6 @@ mod tests {
         let path = Utf8PathBuf::from_str("/foo/bar").unwrap();
         let input = "fn foo() { let a = 1 + 2 * 3; }".to_string();
         db.set_input_file(path.clone(), Arc::from(input));
-        let hir = db.hir(path);
-
-        dbg!(hir);
-        // panic!();
+        let _hir = db.hir(path);
     }
 }

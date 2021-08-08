@@ -68,4 +68,14 @@ impl LineIndex {
             column: col.into(),
         }
     }
+
+    pub fn find_offset(&self, line: u32, character: u32) -> TextSize {
+        let mut offset = TextSize::from(0);
+        for i in 1..line {
+            offset += self.newlines[i as usize];
+        }
+        offset += TextSize::from(character);
+
+        TextSize::from(offset)
+    }
 }

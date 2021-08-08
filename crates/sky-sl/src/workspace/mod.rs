@@ -1,7 +1,8 @@
 use camino::{Utf8Path, Utf8PathBuf};
 
-use crate::db::{CompilerDatabase, SourceDatabase, SyntaxDatabase};
+use crate::db::*;
 use crate::syn::{Parse, cst::LineIndex, ast::Root};
+use crate::hir::type_check::Ty;
 use std::sync::{Arc, Mutex};
 
 mod fs;
@@ -72,6 +73,10 @@ impl Workspace {
     /// Lazily build the line index for the given file
     pub fn line_index(&self, path: &Utf8Path) -> Result<Arc<LineIndex>, ()> {
         Ok(self.inner.db.lock().unwrap().line_index(path.into()))
+    }
+
+    pub fn type_at(&self, path: &Utf8Path, line: u32, character: u32) -> Result<Option<Ty>, ()> {
+        Ok(self.inner.db.lock().unwrap().type_at(path.into(), line, character))
     }
 
     /// deprecated

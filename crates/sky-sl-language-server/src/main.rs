@@ -60,6 +60,7 @@ impl LanguageServer for Backend {
                         },
                     ),
                 ),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -69,6 +70,33 @@ impl LanguageServer for Backend {
         self.client
             .log_message(MessageType::Info, "initialized!")
             .await;
+    }
+
+    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        let path = url_to_path(&params.text_document_position_params.text_document.uri)?;
+        let line = params.text_document_position_params.position.line;
+        let character = params.text_document_position_params.position.character;
+
+        let workspace = self
+            .workspaces
+            .find_or_create(&path)
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let file_path = path
+            .strip_prefix(workspace.package_root())
+            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+
+        if let Some(ty) = workspace.type_at(file_path, line, character).unwrap() {
+            return Ok(Some(Hover {
+                contents: HoverContents::Markup(MarkupContent {
+                    kind: MarkupKind::PlainText,
+                    value: format!("{:?}", ty),
+                }),
+                // TODO
+                range: None,
+            }));
+        }
+
+        Ok(None)
     }
 
     async fn document_symbol(
