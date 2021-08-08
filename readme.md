@@ -23,7 +23,7 @@ The project, at least for now, is just an experiment
 ### maybe-goals
 
 * WGSL output
-* output compatibility with [naga](https://github.com/gfx-rs/naga) if the project gets more serious
+* output compatibility with [naga](https://github.com/gfx-rs/naga) if the sky-sl project gets more serious
 
 ### non-goals
 
