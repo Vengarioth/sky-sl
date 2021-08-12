@@ -65,7 +65,7 @@ impl LiteralExpression {
         Self { ty, span }
     }
 
-    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+    pub fn find_ty(&self, _offset: TextSize) -> Option<Ty> {
         Some(self.ty)
     }
 }
@@ -160,7 +160,7 @@ impl FieldAccessExpression {
         Self { ty, span }
     }
 
-    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+    pub fn find_ty(&self, _offset: TextSize) -> Option<Ty> {
         Some(self.ty)
     }
 }
@@ -176,7 +176,7 @@ impl IndexExpression {
         Self { ty, span }
     }
 
-    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+    pub fn find_ty(&self, _offset: TextSize) -> Option<Ty> {
         todo!()
     }
 }
@@ -193,7 +193,7 @@ impl PathExpression {
         Self { path, ty, span }
     }
 
-    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+    pub fn find_ty(&self, _offset: TextSize) -> Option<Ty> {
         Some(self.ty)
     }
 }
@@ -209,7 +209,7 @@ impl StructExpression {
         Self { ty, span }
     }
 
-    pub fn find_ty(&self, offset: TextSize) -> Option<Ty> {
+    pub fn find_ty(&self, _offset: TextSize) -> Option<Ty> {
         todo!()
     }
 }

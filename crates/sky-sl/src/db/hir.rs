@@ -4,7 +4,7 @@ use camino::Utf8PathBuf;
 use super::*;
 
 #[salsa::query_group(HirDatabaseStorage)]
-pub trait HirDatabase: SyntaxDatabase {
+pub trait HirDatabase: ModuleDatabase {
     fn hir(&self, name: Utf8PathBuf) -> untyped::Module;
 }
 

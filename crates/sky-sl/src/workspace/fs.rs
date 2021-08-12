@@ -13,7 +13,7 @@ pub fn find_package_root(mut query: &Utf8Path) -> Option<Utf8PathBuf> {
 }
 
 fn find_package_root_recursive(query: &Utf8Path) -> Option<Utf8PathBuf> {
-    let package_query = query.join("skysl.package");
+    let package_query = query.join("skysl.toml");
     if package_query.exists() {
         return Some(query.into());
     }

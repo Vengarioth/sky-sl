@@ -264,6 +264,6 @@ mod tests {
 
         dbg!(db.type_at(path.clone(), 0, 0));
 
-        panic!();
+        // panic!();
     }
 }

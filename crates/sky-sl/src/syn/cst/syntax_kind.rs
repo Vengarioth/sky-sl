@@ -83,6 +83,15 @@ pub enum SyntaxKind {
     /// the "fn" keyword
     FnKeyword,
 
+    /// the "use" keyword
+    UseKeyword,
+
+    /// the "mod" keyword
+    ModKeyword,
+
+    /// the "package" keyword
+    PackageKeyword,
+
     /// any non-keyword identifier
     Identifier,
 
@@ -261,6 +270,9 @@ impl SyntaxKind {
             "struct" => Some(StructKeyword),
             "fn" => Some(FnKeyword),
             "let" => Some(LetKeyword),
+            "use" => Some(UseKeyword),
+            "mod" => Some(ModKeyword),
+            "package" => Some(PackageKeyword),
             _ => None,
         }
     }

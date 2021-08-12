@@ -31,6 +31,12 @@ fn parse_item(parser: &mut Parser) {
                 // parse function
                 SyntaxKind::FnKeyword => parse_function(parser),
 
+                // parse use directive
+                SyntaxKind::UseKeyword => parser.error_and_recover(ErrorKind::Unexpected(SyntaxKind::UseKeyword), &token_set(&[SyntaxKind::Semicolon])),
+
+                // parse mod directive
+                SyntaxKind::ModKeyword => parser.error_and_recover(ErrorKind::Unexpected(SyntaxKind::ModKeyword), &token_set(&[SyntaxKind::Semicolon])),
+
                 // otherwise emit an error and recover
                 kind => parser.error_and_recover(ErrorKind::Unexpected(kind), &token_set(&[])),
             }

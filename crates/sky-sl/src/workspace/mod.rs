@@ -15,6 +15,7 @@ pub use package::*;
 struct Inner {
     root: Utf8PathBuf,
     manifest: Utf8PathBuf,
+    package: crate::db::Package,
     db: Mutex<CompilerDatabase>,
 }
 
@@ -41,11 +42,17 @@ impl Workspace {
     /// Creates a new workspace with the given root path
     pub fn new(root: Utf8PathBuf) -> Self {
         let manifest = root.join("skysl.package");
+
+        let mut db = CompilerDatabase::default();
+        let package = db.add_package(root.clone());
+        db.discover_modules(package);
+
         Self {
             inner: Arc::new(Inner {
                 root,
                 manifest,
-                db: Mutex::new(CompilerDatabase::default()),
+                package,
+                db: Mutex::new(db),
             }),
         }
     }
@@ -62,6 +69,9 @@ impl Workspace {
 
     /// Notify the workspace that a file has changed
     pub fn update_file(&mut self, path: Utf8PathBuf, contents: Arc<String>) {
+        // map path to module
+        dbg!(&path);
+        // insert new version of module
         self.inner.db.lock().unwrap().set_input_file(path, contents);
     }
 

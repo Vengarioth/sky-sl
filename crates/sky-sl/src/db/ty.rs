@@ -1,4 +1,3 @@
-use rowan::TextSize;
 use salsa::{InternId, InternKey};
 use camino::Utf8PathBuf;
 use crate::hir::{typed, type_check::{Env, infer_module, Ty}};
