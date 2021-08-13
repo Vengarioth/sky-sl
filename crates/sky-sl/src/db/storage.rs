@@ -1,6 +1,7 @@
 use super::*;
 use camino::Utf8PathBuf;
 use std::sync::Arc;
+use std::fmt;
 
 #[salsa::database(
     PackageDatabaseStorage,
@@ -23,5 +24,12 @@ impl CompilerDatabase {
         self.intern_package(Arc::new(PackageData {
             root,
         }))
+    }
+}
+
+impl fmt::Debug for CompilerDatabase {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("CompilerDatabase")
+            .finish_non_exhaustive()
     }
 }

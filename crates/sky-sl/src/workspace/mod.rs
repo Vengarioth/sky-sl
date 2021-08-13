@@ -10,6 +10,7 @@ mod error;
 mod package;
 mod workspace;
 mod manifest;
+mod bootstrap;
 
 pub use error::*;
 pub use package::*;
