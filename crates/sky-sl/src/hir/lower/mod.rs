@@ -13,6 +13,7 @@ pub fn lower_ast_to_hir(ast: &Root) -> untyped::Module {
         match item.kind() {
             ModuleItemKind::FunctionDefinition(function_definition) => visit_function_definition(function_definition, &mut items, &mut errors),
             ModuleItemKind::StructDefinition(struct_definition) => visit_struct_definition(struct_definition, &mut items, &mut errors),
+            _ => { /* TODO */ }
         };
     }
 

@@ -25,6 +25,8 @@ fn parse_item(parser: &mut Parser) {
                     continue;
                 }
 
+                SyntaxKind::ModKeyword => parse_module_declaration(parser),
+
                 // parse struct
                 SyntaxKind::StructKeyword => parse_struct(parser),
 
@@ -34,12 +36,32 @@ fn parse_item(parser: &mut Parser) {
                 // parse use directive
                 SyntaxKind::UseKeyword => parser.error_and_recover(ErrorKind::Unexpected(SyntaxKind::UseKeyword), &token_set(&[SyntaxKind::Semicolon])),
 
-                // parse mod directive
-                SyntaxKind::ModKeyword => parser.error_and_recover(ErrorKind::Unexpected(SyntaxKind::ModKeyword), &token_set(&[SyntaxKind::Semicolon])),
-
                 // otherwise emit an error and recover
                 kind => parser.error_and_recover(ErrorKind::Unexpected(kind), &token_set(&[])),
             }
+        }
+    });
+}
+
+/// Parses a module declaration
+///
+/// ```ignore
+/// mod test;
+/// ```
+fn parse_module_declaration(parser: &mut Parser) {
+    // we already know we want to parse a mod
+    parser.node(SyntaxKind::Module, |parser| {
+        // consume the `mod` keyword
+        parser.bump();
+
+        parser.bump_if(SyntaxKind::Whitespace);
+
+        parse_identifier(parser);
+
+        if !parser.is_at(SyntaxKind::Semicolon) {
+            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[SyntaxKind::Semicolon, SyntaxKind::FnKeyword, SyntaxKind::StructKeyword]));
+        } else {
+            parser.bump();
         }
     });
 }

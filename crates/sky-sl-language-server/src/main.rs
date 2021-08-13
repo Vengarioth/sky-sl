@@ -215,6 +215,40 @@ impl LanguageServer for Backend {
             }
         }
 
+        for module in ast.modules() {
+            let syntax = module.syntax();
+            let range = syntax.text_range();
+            let start = line_index.find_position(range.start());
+            let end = line_index.find_position(range.end());
+            let range = Range::new(
+                Position::new(start.line, start.column),
+                Position::new(end.line, end.column),
+            );
+
+            if let Some(identifier) = module.identifier() {
+                let selection_range = identifier.syntax().text_range();
+                let start = line_index.find_position(selection_range.start());
+                let end = line_index.find_position(selection_range.end());
+                let selection_range = Range::new(
+                    Position::new(start.line, start.column),
+                    Position::new(end.line, end.column),
+                );
+
+                #[allow(deprecated)]
+                let symbol = DocumentSymbol {
+                    name: identifier.syntax().to_string(),
+                    detail: None,
+                    kind: SymbolKind::Module,
+                    tags: None,
+                    range,
+                    selection_range,
+                    children: None,
+                    deprecated: None,
+                };
+                symbols.push(symbol);
+            }
+        }
+
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
 

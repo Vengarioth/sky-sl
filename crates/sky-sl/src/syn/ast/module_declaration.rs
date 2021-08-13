@@ -1,12 +1,12 @@
-use super::{AstNode, FunctionDefinitionOwner, ModuleDeclarationOwner, ModuleItemOwner, StructDefinitionOwner};
+use super::{AstNode, AstChildren, IdentifierOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Root {
+pub struct ModuleDeclaration {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl AstNode for Root {
+impl AstNode for ModuleDeclaration {
     fn can_cast_from(kind: SyntaxKind) -> bool {
         kind == SyntaxKind::Module
     }
@@ -21,7 +21,10 @@ impl AstNode for Root {
     }
 }
 
-impl ModuleItemOwner for Root {}
-impl FunctionDefinitionOwner for Root {}
-impl StructDefinitionOwner for Root {}
-impl ModuleDeclarationOwner for Root {}
+pub trait ModuleDeclarationOwner: AstNode {
+    fn modules(&self) -> AstChildren<ModuleDeclaration> {
+        super::children(self)
+    }
+}
+
+impl IdentifierOwner for ModuleDeclaration {}

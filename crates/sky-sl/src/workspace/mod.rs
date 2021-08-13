@@ -1,21 +1,21 @@
 use camino::{Utf8Path, Utf8PathBuf};
 
 use crate::db::*;
-use crate::syn::{Parse, cst::LineIndex, ast::Root};
+use crate::syn::cst::LineIndex;
 use crate::hir::type_check::Ty;
 use std::sync::{Arc, Mutex};
 
 mod fs;
 mod error;
 mod package;
+mod workspace;
+mod manifest;
 
 pub use error::*;
 pub use package::*;
 
 struct Inner {
     root: Utf8PathBuf,
-    manifest: Utf8PathBuf,
-    package: crate::db::Package,
     db: Mutex<CompilerDatabase>,
 }
 
@@ -23,7 +23,6 @@ impl std::fmt::Debug for Inner {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Inner")
             .field("root", &self.root)
-            .field("manifest", &self.manifest)
             .finish_non_exhaustive()
     }
 }
@@ -41,25 +40,15 @@ impl Workspace {
 
     /// Creates a new workspace with the given root path
     pub fn new(root: Utf8PathBuf) -> Self {
-        let manifest = root.join("skysl.package");
 
-        let mut db = CompilerDatabase::default();
-        let package = db.add_package(root.clone());
-        db.discover_modules(package);
+        let db = CompilerDatabase::default();
 
         Self {
             inner: Arc::new(Inner {
                 root,
-                manifest,
-                package,
                 db: Mutex::new(db),
             }),
         }
-    }
-
-    /// Returns the absolute path to the package manifest
-    pub fn package_manifest(&self) -> &Utf8Path {
-        &self.inner.manifest
     }
 
     /// Returns the absolute path to the package root
@@ -87,19 +76,6 @@ impl Workspace {
 
     pub fn type_at(&self, path: &Utf8Path, line: u32, character: u32) -> Result<Option<Ty>, ()> {
         Ok(self.inner.db.lock().unwrap().type_at(path.into(), line, character))
-    }
-
-    /// deprecated
-    pub fn document_symbols(&self, path: &Utf8Path) -> Result<Parse<Root>, ()> {
-        let input = std::fs::read_to_string(path).expect("could not read file to string");
-        let token = crate::lexer::tokenize(&input);
-        Ok(crate::parser::parse(&token, &input))
-    }
-
-    /// deprecated
-    pub fn get_line_index(&self, path: Utf8PathBuf) -> Result<LineIndex, ()> {
-        let input = std::fs::read_to_string(path).expect("could not read file to string");
-        Ok(LineIndex::new(&input))
     }
 }
 

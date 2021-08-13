@@ -10,6 +10,7 @@ fn visit_root(root: Root) {
         match module_item.kind() {
             ModuleItemKind::FunctionDefinition(_) => todo!(),
             ModuleItemKind::StructDefinition(struct_definition) => visit_struct_definition(struct_definition),
+            _ => { /* TODO */ },
         }
     }
 }
