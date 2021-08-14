@@ -1,11 +1,9 @@
-use super::manifest::*;
 use super::workspace::*;
-use camino::{Utf8Path, Utf8PathBuf};
-use thiserror::Error;
+use camino::Utf8Path;
 use crate::{db::*, syn::ast::{IdentifierOwner, ModuleDeclarationOwner}};
 use std::sync::Arc;
 
-fn bootstrap(path: &Utf8Path) -> Result<Workspace, WorkspaceError> {
+pub fn bootstrap(path: &Utf8Path) -> Result<Workspace, WorkspaceError> {
     let root_path = path.parent().unwrap().to_owned();
     let mut workspace = Workspace::load_from_file(path)?;
 

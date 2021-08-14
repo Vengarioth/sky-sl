@@ -1,9 +1,10 @@
 use sky_sl::workspace::*;
 use camino::{Utf8Path, Utf8PathBuf};
 use dashmap::{DashMap, mapref::one::RefMut};
+use std::sync::Mutex;
 
 pub struct Workspaces {
-    inner: DashMap<Utf8PathBuf, Workspace>,
+    inner: DashMap<Utf8PathBuf, Mutex<Workspace>>,
 }
 
 impl Workspaces {
@@ -13,9 +14,10 @@ impl Workspaces {
         }
     }
 
-    pub fn find_or_create(&self, query: &Utf8Path) -> Result<RefMut<'_, Utf8PathBuf, Workspace>, WorkspaceError> {
-        let package_root = find_package_root(query).ok_or_else(|| WorkspaceError::NoPackageRootFound)?;
-        Ok(self.inner.entry(package_root.clone()).or_insert_with(|| Workspace::new(package_root)))
+    pub fn find_or_create(&self, query: &Utf8Path) -> Result<RefMut<'_, Utf8PathBuf, Mutex<Workspace>>, WorkspaceError> {
+        let mut package_root = find_package_root(query).ok_or_else(|| WorkspaceError::NoPackageRootFound)?;
+        package_root.push("skysl.toml");
+        Ok(self.inner.entry(package_root.clone()).or_insert_with(|| Mutex::new(bootstrap(&package_root).unwrap())))
     }
 }
 

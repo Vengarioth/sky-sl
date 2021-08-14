@@ -35,7 +35,7 @@ impl FromStr for WorkspaceManifest {
     type Err = WorkspaceManifestError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let manifest = toml::from_str::<WorkspaceManifest>(s).map_err(|e| WorkspaceManifestError::ManifestParseError)?;
+        let manifest = toml::from_str::<WorkspaceManifest>(s).map_err(|_| WorkspaceManifestError::ManifestParseError)?;
         Ok(manifest)
     }
 }

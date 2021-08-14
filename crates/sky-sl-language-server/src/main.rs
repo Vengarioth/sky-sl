@@ -1,8 +1,7 @@
-use sky_sl::syn::ast::*;
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::sync::Arc;
+use sky_sl::syn::ast::*;
 use tower_lsp::jsonrpc::*;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
@@ -23,69 +22,16 @@ struct Backend {
     workspaces: Workspaces,
 }
 
-#[tower_lsp::async_trait]
-impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
-        Ok(InitializeResult {
-            server_info: None,
-            capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(
-                    TextDocumentSyncKind::Full,
-                )),
-                completion_provider: Some(CompletionOptions {
-                    resolve_provider: Some(false),
-                    trigger_characters: Some(vec![".".to_string()]),
-                    work_done_progress_options: Default::default(),
-                    all_commit_characters: None,
-                }),
-                execute_command_provider: Some(ExecuteCommandOptions {
-                    commands: vec!["dummy.do_something".to_string()],
-                    work_done_progress_options: Default::default(),
-                }),
-                workspace: Some(WorkspaceServerCapabilities {
-                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
-                        supported: Some(true),
-                        change_notifications: Some(OneOf::Left(true)),
-                    }),
-                    file_operations: None,
-                }),
-                document_symbol_provider: Some(OneOf::Left(true)),
-                semantic_tokens_provider: Some(
-                    SemanticTokensServerCapabilities::SemanticTokensOptions(
-                        SemanticTokensOptions {
-                            legend: semantics::get_legend(),
-                            full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
-                            range: None,
-                            work_done_progress_options: Default::default(),
-                        },
-                    ),
-                ),
-                hover_provider: Some(HoverProviderCapability::Simple(true)),
-                ..ServerCapabilities::default()
-            },
-        })
-    }
-
-    async fn initialized(&self, _params: InitializedParams) {
-        self.client
-            .log_message(MessageType::Info, "initialized!")
-            .await;
-    }
-
-    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+impl Backend {
+    pub fn compute_hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let path = url_to_path(&params.text_document_position_params.text_document.uri)?;
         let line = params.text_document_position_params.position.line;
         let character = params.text_document_position_params.position.character;
 
-        let workspace = self
-            .workspaces
-            .find_or_create(&path)
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-        let file_path = path
-            .strip_prefix(workspace.package_root())
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let locked_workspace = self.workspaces.find_or_create(&path).unwrap();
+        let workspace = locked_workspace.lock().unwrap();
 
-        if let Some(ty) = workspace.type_at(file_path, line, character).unwrap() {
+        if let Some(ty) = workspace.type_at(&path, line, character) {
             return Ok(Some(Hover {
                 contents: HoverContents::Markup(MarkupContent {
                     kind: MarkupKind::PlainText,
@@ -99,22 +45,17 @@ impl LanguageServer for Backend {
         Ok(None)
     }
 
-    async fn document_symbol(
+    pub fn compute_document_symbols(
         &self,
         params: DocumentSymbolParams,
     ) -> Result<Option<DocumentSymbolResponse>> {
         let path = url_to_path(&params.text_document.uri)?;
-        let workspace = self
-            .workspaces
-            .find_or_create(&path)
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-        let file_path = path
-            .strip_prefix(workspace.package_root())
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let locked_workspace = self.workspaces.find_or_create(&path).unwrap();
+        let workspace = locked_workspace.lock().unwrap();
 
         let mut symbols = Vec::new();
-        let ast = workspace.ast(&file_path).unwrap().tree();
-        let line_index = workspace.line_index(&file_path).unwrap();
+        let ast = workspace.get_ast(&path).tree();
+        let line_index = workspace.get_line_index(&path);
 
         for struct_definition in ast.struct_definitions() {
             let syntax = struct_definition.syntax();
@@ -154,7 +95,7 @@ impl LanguageServer for Backend {
                         }
                     }
                 }
-                
+
                 let selection_range = identifier.syntax().text_range();
                 let start = line_index.find_position(selection_range.start());
                 let end = line_index.find_position(selection_range.end());
@@ -189,7 +130,6 @@ impl LanguageServer for Backend {
             );
 
             if let Some(signature) = fn_definition.signature() {
-
                 if let Some(identifier) = signature.identifier() {
                     let selection_range = identifier.syntax().text_range();
                     let start = line_index.find_position(selection_range.start());
@@ -198,7 +138,7 @@ impl LanguageServer for Backend {
                         Position::new(start.line, start.column),
                         Position::new(end.line, end.column),
                     );
-    
+
                     #[allow(deprecated)]
                     let symbol = DocumentSymbol {
                         name: identifier.syntax().to_string(),
@@ -252,26 +192,131 @@ impl LanguageServer for Backend {
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
     }
 
-    async fn semantic_tokens_full(
+    pub fn compute_semantic_tokens(
         &self,
         params: SemanticTokensParams,
     ) -> Result<Option<SemanticTokensResult>> {
         // See https://code.visualstudio.com/api/language-extensions/semantic-highlight-guide
         let path = url_to_path(&params.text_document.uri)?;
-        let workspace = self
-            .workspaces
-            .find_or_create(&path)
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
-        let file_path = path
-            .strip_prefix(workspace.package_root())
-            .map_err(|_| Error::new(ErrorCode::ServerError(1)))?;
+        let locked_workspace = self.workspaces.find_or_create(&path).unwrap();
+        let workspace = locked_workspace.lock().unwrap();
 
-        let root = workspace.ast(&file_path).unwrap().tree();
-        let line_index = workspace.line_index(&file_path).unwrap();
+        let root = workspace.get_ast(&path).tree();
+        let line_index = workspace.get_line_index(&path);
 
         let semantic_tokens = semantics::get_semantic_tokens(root, &line_index);
 
         Ok(Some(SemanticTokensResult::Tokens(semantic_tokens)))
+    }
+
+    pub fn on_did_open(&self, params: DidOpenTextDocumentParams) {
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        let locked_workspace = self.workspaces.find_or_create(&path).unwrap();
+        let mut workspace = locked_workspace.lock().unwrap();
+        workspace.set_source(path.into(), params.text_document.text.to_string());
+    }
+
+    pub fn on_did_change(&self, params: DidChangeTextDocumentParams) {
+        let _version = params.text_document.version;
+        let uri = params.text_document.uri;
+
+        let path = url_to_path(&uri).unwrap();
+        let p = path.clone();
+        let locked_workspace = self.workspaces.find_or_create(&p).unwrap();
+        let mut workspace = locked_workspace.lock().unwrap();
+
+        workspace.set_source(path.clone(), params.content_changes[0].text.to_string());
+
+        let ast = workspace.get_ast(&(path.clone()));
+        let line_index = workspace.get_line_index(&path);
+
+        let mut diagnostics = Vec::new();
+
+        for error in ast.errors() {
+            let start = line_index.find_position((error.offset as u32).into());
+            let end = line_index.find_position(((error.offset + error.length) as u32).into());
+
+            diagnostics.push(Diagnostic::new(
+                Range::new(
+                    Position::new(start.line, start.column),
+                    Position::new(end.line, end.column),
+                ),
+                Some(DiagnosticSeverity::Error),
+                Some(NumberOrString::Number(0)),
+                Some(" ".to_string()),
+                "Some Diagnostic".to_string(),
+                None,
+                None,
+            ));
+        }
+    }
+}
+
+#[tower_lsp::async_trait]
+impl LanguageServer for Backend {
+    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+        Ok(InitializeResult {
+            server_info: None,
+            capabilities: ServerCapabilities {
+                text_document_sync: Some(TextDocumentSyncCapability::Kind(
+                    TextDocumentSyncKind::Full,
+                )),
+                completion_provider: Some(CompletionOptions {
+                    resolve_provider: Some(false),
+                    trigger_characters: Some(vec![".".to_string()]),
+                    work_done_progress_options: Default::default(),
+                    all_commit_characters: None,
+                }),
+                execute_command_provider: Some(ExecuteCommandOptions {
+                    commands: vec!["dummy.do_something".to_string()],
+                    work_done_progress_options: Default::default(),
+                }),
+                workspace: Some(WorkspaceServerCapabilities {
+                    workspace_folders: Some(WorkspaceFoldersServerCapabilities {
+                        supported: Some(true),
+                        change_notifications: Some(OneOf::Left(true)),
+                    }),
+                    file_operations: None,
+                }),
+                document_symbol_provider: Some(OneOf::Left(true)),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: semantics::get_legend(),
+                            full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
+                            range: None,
+                            work_done_progress_options: Default::default(),
+                        },
+                    ),
+                ),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
+                ..ServerCapabilities::default()
+            },
+        })
+    }
+
+    async fn initialized(&self, _params: InitializedParams) {
+        self.client
+            .log_message(MessageType::Info, "initialized!")
+            .await;
+    }
+
+    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        self.compute_hover(params)
+    }
+
+    async fn document_symbol(
+        &self,
+        params: DocumentSymbolParams,
+    ) -> Result<Option<DocumentSymbolResponse>> {
+        self.compute_document_symbols(params)
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        self.compute_semantic_tokens(params)
     }
 
     async fn shutdown(&self) -> Result<()> {
@@ -311,14 +356,7 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let path = url_to_path(&params.text_document.uri).unwrap();
-        let mut workspace = self.workspaces.find_or_create(&path).unwrap();
-        let file_path = path.strip_prefix(workspace.package_root()).unwrap();
-
-        workspace.update_file(
-            file_path.into(),
-            Arc::new(params.text_document.text.to_string()),
-        );
+        self.on_did_open(params);
 
         self.client
             .log_message(MessageType::Info, "file opened!")
@@ -326,44 +364,13 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let version = params.text_document.version;
-        let uri = params.text_document.uri;
+        self.on_did_change(params);
 
-        let path = url_to_path(&uri).unwrap();
-        let mut workspace = self.workspaces.find_or_create(&path).unwrap();
-        let file_path = path.strip_prefix(workspace.package_root()).unwrap();
-
-        workspace.update_file(
-            file_path.into(),
-            Arc::new(params.content_changes[0].text.to_string()),
-        );
-
-        let ast = workspace.ast(file_path.into()).unwrap();
-        let line_index = workspace.line_index(file_path.into()).unwrap();
-
-        let mut diagnostics = Vec::new();
-        
-        for error in ast.errors() {
-            let start = line_index.find_position((error.offset as u32).into());
-            let end = line_index.find_position(((error.offset + error.length) as u32).into());
-
-            diagnostics.push(Diagnostic::new(
-                Range::new(
-                    Position::new(start.line, start.column),
-                    Position::new(end.line, end.column),
-                ),
-                Some(DiagnosticSeverity::Error),
-                Some(NumberOrString::Number(0)),
-                Some(" ".to_string()),
-                "Some Diagnostic".to_string(),
-                None,
-                None,
-            ));
-        }
-
+        /*
         self.client
             .publish_diagnostics(uri, diagnostics, Some(version))
             .await;
+        */
 
         self.client
             .log_message(MessageType::Info, "file changed!")

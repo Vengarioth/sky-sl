@@ -77,7 +77,7 @@ impl Env {
 
 pub fn infer_module(module: &untyped::Module, env: &mut Env) -> typed::Module {
     let mut items = Vec::new();
-    let mut errors = Vec::new();
+    let errors = Vec::new();
 
     for item in &module.items {
         match item {

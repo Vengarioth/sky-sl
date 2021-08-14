@@ -39,8 +39,16 @@ impl Workspace {
         self.db.ast(path.to_owned())
     }
 
+    pub fn get_line_index(&self, path: &Utf8Path) -> Arc<crate::syn::cst::LineIndex> {
+        self.db.line_index(path.into())
+    }
+
     pub fn get_source_path(&self, module_path: ModulePath) -> Utf8PathBuf {
         self.db.module_file_path(module_path)
+    }
+
+    pub fn type_at(&self, path: &Utf8Path, line: u32, character: u32) -> Option<crate::hir::type_check::Ty> {
+        self.db.type_at(path.into(), line, character)
     }
 
     pub(super) fn db(&self) -> &CompilerDatabase {
@@ -56,6 +64,9 @@ impl Workspace {
 pub enum WorkspaceError {
     #[error("Manifest error")]
     ManifestError(#[from] WorkspaceManifestError),
+
+    #[error("No package root found")]
+    NoPackageRootFound,
 }
 
 #[derive(Debug)]
