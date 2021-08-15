@@ -24,7 +24,7 @@ pub fn bootstrap(path: &Utf8Path) -> Result<Workspace, WorkspaceError> {
 
 fn add_modules(workspace: &mut Workspace, module_name: &str, path: &Utf8Path, parent_module: ModulePath) {
 
-    dbg!(parent_module, module_name);
+    // dbg!(parent_module, module_name);
 
     let ast = workspace.get_ast(path);
     let module_root = path.parent().unwrap().clone();
@@ -84,6 +84,6 @@ mod tests {
         let path = Utf8PathBuf::from_str("C:\\Workspace\\Projects\\sky-sl\\example\\skysl.toml").unwrap();
         let workspace = bootstrap(&path).unwrap();
         dbg!(workspace);
-        panic!();
+        // panic!();
     }
 }

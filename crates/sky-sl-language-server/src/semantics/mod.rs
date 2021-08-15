@@ -44,9 +44,7 @@ fn visit_root(root: Root, builder: &mut SemanticTokensBuilder) {
 }
 
 fn visit_module_declaration(module_declaration: ModuleDeclaration, builder: &mut SemanticTokensBuilder) {
-    dbg!(&module_declaration);
     if let Some(keyword) = module_declaration.syntax().first_token() {
-        dbg!(&keyword);
         builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
     }
 }

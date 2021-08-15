@@ -131,7 +131,7 @@ fn lower_binary_expression(binary_expression: BinaryExpression) -> Result<untype
     let operator = binary_expression.operator().ok_or_else(|| LowerToHirError::IncompleteExpression)?;
 
     // TODO
-    dbg!(operator);
+    // dbg!(operator);
 
     Ok(untyped::BinaryExpression::new(
         Box::new(lhs),

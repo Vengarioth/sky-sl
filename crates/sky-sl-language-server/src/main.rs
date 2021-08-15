@@ -221,6 +221,7 @@ impl Backend {
         let uri = params.text_document.uri;
 
         let path = url_to_path(&uri).unwrap();
+
         let p = path.clone();
         let locked_workspace = self.workspaces.find_or_create(&p).unwrap();
         let mut workspace = locked_workspace.lock().unwrap();
