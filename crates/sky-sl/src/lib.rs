@@ -1,3 +1,5 @@
+mod fs;
+
 pub mod db;
 pub mod hir;
 pub mod lexer;
