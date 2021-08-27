@@ -1,78 +1,24 @@
-use super::manifest::{WorkspaceManifest, WorkspaceManifestError};
-use camino::{Utf8Path, Utf8PathBuf};
-use thiserror::Error;
+use super::WorkspaceError;
 use crate::db::*;
+use camino::Utf8PathBuf;
 use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Workspace {
-    manifest: WorkspaceManifest,
+    root: Utf8PathBuf,
     db: CompilerDatabase,
 }
 
 impl Workspace {
-    pub fn load_from_file(path: &Utf8Path) -> Result<Self, WorkspaceError> {
-        let manifest = WorkspaceManifest::from_file(path)?;
+    pub fn create(root: Utf8PathBuf) -> Result<Self, WorkspaceError> {
         let db = CompilerDatabase::default();
-
         Ok(Self {
-            manifest,
+            root,
             db,
         })
     }
 
-    /// Returns information about all projects in the current workspace
-    pub fn get_projects(&self) -> Vec<ProjectInfo> {
-        // currently there is only one project per workspace
-        vec![ProjectInfo {
-            name: self.manifest.project.name.to_string(),
-            path: self.manifest.project.path().into(),
-        }]
+    pub fn set_file_contents(&mut self, path: Utf8PathBuf, contents: Arc<String>) {
+        self.db.set_input_file(path, contents);
     }
-
-    pub fn set_source(&mut self, path: Utf8PathBuf, source: String) {
-        // TODO update paths and modules
-        self.db.set_input_file(path, Arc::new(source));
-    }
-
-    pub fn get_ast(&self, path: &Utf8Path) -> crate::syn::Parse<crate::syn::ast::Root> {
-        self.db.ast(path.to_owned())
-    }
-
-    pub fn get_line_index(&self, path: &Utf8Path) -> Arc<crate::syn::cst::LineIndex> {
-        self.db.line_index(path.into())
-    }
-
-    pub fn get_source_path(&self, module_path: ModulePath) -> Utf8PathBuf {
-        self.db.module_file_path(module_path)
-    }
-
-    pub fn type_at(&self, path: &Utf8Path, line: u32, character: u32) -> Option<crate::hir::type_check::Ty> {
-        self.db.type_at(path.into(), line, character)
-    }
-
-    pub(super) fn db(&self) -> &CompilerDatabase {
-        &self.db
-    }
-
-    pub(super) fn db_mut(&mut self) -> &mut CompilerDatabase {
-        &mut self.db
-    }
-}
-
-#[derive(Error, Debug)]
-pub enum WorkspaceError {
-    #[error("Manifest error")]
-    ManifestError(#[from] WorkspaceManifestError),
-
-    #[error("No package root found")]
-    NoPackageRootFound,
-}
-
-#[derive(Debug)]
-pub struct ProjectInfo {
-    /// Name of the project
-    pub name: String,
-    /// Path of the project's entry point, relative to the workspace manifest
-    pub path: Utf8PathBuf,
 }

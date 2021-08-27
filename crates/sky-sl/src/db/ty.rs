@@ -11,6 +11,8 @@ pub trait TyDatabase: HirDatabase {
 
     fn types(&self, name: Utf8PathBuf) -> typed::Module;
 
+    fn module_types(&self, module: ModulePath) -> typed::Module;
+
     fn type_at(&self, name: Utf8PathBuf, line: u32, character: u32) -> Option<Ty>;
 }
 
@@ -43,6 +45,10 @@ fn types(db: &dyn TyDatabase, name: Utf8PathBuf) -> typed::Module {
     let module = db.hir(name);
     let mut env = Env::empty();
     infer_module(&module, &mut env)
+}
+
+fn module_types(db: &dyn TyDatabase, module: ModulePath) -> typed::Module {
+    todo!();
 }
 
 fn type_at(db: &dyn TyDatabase, name: Utf8PathBuf, line: u32, character: u32) -> Option<Ty> {

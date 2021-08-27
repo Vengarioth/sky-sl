@@ -1,3 +1,4 @@
+/*
 use super::workspace::*;
 use camino::Utf8Path;
 use crate::{db::*, syn::ast::{IdentifierOwner, ModuleDeclarationOwner}};
@@ -23,9 +24,7 @@ pub fn bootstrap(path: &Utf8Path) -> Result<Workspace, WorkspaceError> {
 }
 
 fn add_modules(workspace: &mut Workspace, module_name: &str, path: &Utf8Path, parent_module: ModulePath) {
-
-    // dbg!(parent_module, module_name);
-
+    dbg!(module_name);
     let ast = workspace.get_ast(path);
     let module_root = path.parent().unwrap().clone();
 
@@ -64,11 +63,8 @@ fn add_modules(workspace: &mut Workspace, module_name: &str, path: &Utf8Path, pa
                     unimplemented!();
                 }
             }
-
         }
     }
-
-    // iterate over ast modules
 }
 
 #[cfg(test)]
@@ -81,9 +77,11 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let path = Utf8PathBuf::from_str("C:\\Workspace\\Projects\\sky-sl\\example\\skysl.toml").unwrap();
+        // let path = Utf8PathBuf::from_str("C:\\Workspace\\Projects\\sky-sl\\example\\skysl.toml").unwrap();
+        let path = Utf8PathBuf::from_str("/Users/vengarioth/Workspace/skyward-engine/sky-sl/example/skysl.toml").unwrap();
         let workspace = bootstrap(&path).unwrap();
-        dbg!(workspace);
-        // panic!();
+        workspace.type_at("/Users/vengarioth/Workspace/skyward-engine/sky-sl/example/src/lib.skysl".into(), 1, 1);
+        panic!();
     }
 }
+*/

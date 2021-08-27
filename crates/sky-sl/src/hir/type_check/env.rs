@@ -41,6 +41,10 @@ impl Env {
         }
     }
 
+    pub fn lookup_ty(&mut self, ty_name: &str) -> Ty {
+        todo!()
+    }
+
     pub fn intern_ty(&mut self, ty_name: &str) -> Ty {
         if let Some(ty) = self.ty.get(ty_name) {
             *ty
