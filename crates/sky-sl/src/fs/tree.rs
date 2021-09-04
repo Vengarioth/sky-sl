@@ -1,3 +1,4 @@
+use super::FileDatabase;
 use salsa::{InternId, InternKey};
 use std::collections::HashSet;
 
@@ -11,6 +12,12 @@ impl InternKey for PathSegment {
 
     fn as_intern_id(&self) -> InternId {
         self.0
+    }
+}
+
+impl PathSegment {
+    pub fn parent(&self, db: &dyn FileDatabase) -> Option<PathSegment> {
+        db.lookup_intern_path_data(*self).parent()
     }
 }
 
@@ -57,6 +64,10 @@ impl DirectoryData {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.children.len()
+    }
+
     pub fn from_slice(slice: &[PathSegment]) -> Self {
         let mut children = HashSet::new();
         for item in slice {
@@ -78,5 +89,37 @@ impl DirectoryData {
         Self {
             children,
         }
+    }
+
+    pub fn without_segment(&self, segment: PathSegment) -> Self {
+        let mut children = self.children.clone();
+        children.remove(&segment);
+        Self {
+            children,
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &PathSegment> {
+        self.children.iter()
+    }
+
+    pub fn find_by_name(&self, child_name: &str, db: &dyn FileDatabase) -> Option<PathSegment> {
+        for child in &self.children {
+            match db.lookup_intern_path_data(*child) {
+                PathSegmentData::Root => {},
+                PathSegmentData::Directory { name, .. } => {
+                    if name == child_name {
+                        return Some(*child);
+                    }
+                },
+                PathSegmentData::File { name, .. } => {
+                    if name == child_name {
+                        return Some(*child);
+                    }
+                },
+            }
+        }
+
+        None
     }
 }

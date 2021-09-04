@@ -5,11 +5,15 @@ use sky_sl::syn::ast::*;
 use tower_lsp::jsonrpc::*;
 use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
+use std::sync::Mutex;
 
 mod semantics;
 mod workspaces;
+mod vfs;
+mod ws;
 
 use workspaces::Workspaces;
+use ws::VSCodeWorkspaces;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct SyntaxTreeParams {
@@ -20,6 +24,7 @@ struct SyntaxTreeParams {
 struct Backend {
     client: Client,
     workspaces: Workspaces,
+    vscode_workspaces: Mutex<VSCodeWorkspaces>,
 }
 
 impl Backend {
@@ -255,7 +260,17 @@ impl Backend {
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
+    async fn initialize(&self, params: InitializeParams) -> Result<InitializeResult> {
+        dbg!(&params);
+
+        let mut workspaces = self.vscode_workspaces.lock().unwrap();
+        if let Some(workspace_folders) = &params.workspace_folders {
+            for workspace_folder in workspace_folders {
+                let root_path = url_to_path(&workspace_folder.uri).unwrap();
+                workspaces.create_workspace(workspace_folder.name.to_string(), root_path);
+            }
+        }
+
         Ok(InitializeResult {
             server_info: None,
             capabilities: ServerCapabilities {
@@ -357,6 +372,8 @@ impl LanguageServer for Backend {
     }
 
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        self.vscode_workspaces.lock().unwrap().did_open(path);
         self.on_did_open(params);
 
         self.client
@@ -365,6 +382,8 @@ impl LanguageServer for Backend {
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        self.vscode_workspaces.lock().unwrap().did_change(path);
         self.on_did_change(params);
 
         /*
@@ -384,7 +403,9 @@ impl LanguageServer for Backend {
             .await;
     }
 
-    async fn did_close(&self, _params: DidCloseTextDocumentParams) {
+    async fn did_close(&self, params: DidCloseTextDocumentParams) {
+        let path = url_to_path(&params.text_document.uri).unwrap();
+        self.vscode_workspaces.lock().unwrap().did_close(path);
         self.client
             .log_message(MessageType::Info, "file closed!")
             .await;
@@ -406,6 +427,7 @@ async fn main() {
     let (service, messages) = LspService::new(|client| Backend {
         client,
         workspaces: Workspaces::new(),
+        vscode_workspaces: Mutex::new(VSCodeWorkspaces::new()),
     });
 
     Server::new(stdin, stdout)

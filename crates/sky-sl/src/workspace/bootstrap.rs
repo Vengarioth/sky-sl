@@ -84,6 +84,5 @@ mod tests {
         let path = Utf8PathBuf::from_str("C:\\Workspace\\Projects\\sky-sl\\example\\skysl.toml").unwrap();
         let workspace = bootstrap(&path).unwrap();
         dbg!(workspace);
-        // panic!();
     }
 }

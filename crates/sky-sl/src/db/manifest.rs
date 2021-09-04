@@ -1,11 +1,10 @@
-use super::PackageDatabase;
 use camino::Utf8PathBuf;
 use serde::Deserialize;
 use thiserror::Error;
 use std::{path::Path, str::FromStr, sync::Arc};
 
 #[salsa::query_group(ManifestDatabaseStorage)]
-pub trait ManifestDatabase: PackageDatabase {
+pub trait ManifestDatabase: salsa::Database {
     #[salsa::input]
     fn manifest(&self, path: Utf8PathBuf) -> Arc<Manifest>;
 }

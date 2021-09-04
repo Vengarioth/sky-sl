@@ -4,7 +4,6 @@ mod syntax;
 mod hir;
 mod ty;
 mod module;
-mod package;
 mod manifest;
 
 pub use source::*;
@@ -13,7 +12,6 @@ pub use syntax::*;
 pub use hir::*;
 pub use ty::*;
 pub use module::*;
-pub use package::*;
 pub use manifest::*;
 
 #[cfg(test)]

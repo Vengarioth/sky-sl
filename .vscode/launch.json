@@ -13,6 +13,7 @@
         ],
         "outFiles": [
             "${workspaceFolder}/vscode/dist/**/*.js"
-        ]
+        ],
+        "preLaunchTask": "Build"
     }]
 }

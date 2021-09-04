@@ -1,9 +1,10 @@
 use super::*;
-use camino::Utf8PathBuf;
-use std::sync::Arc;
+use crate::fs::db::*;
+use crate::package::*;
 use std::fmt;
 
 #[salsa::database(
+    FileDatabaseStorage,
     PackageDatabaseStorage,
     ManifestDatabaseStorage,
     SourceDatabaseStorage,
@@ -18,14 +19,6 @@ pub struct CompilerDatabase {
 }
 
 impl salsa::Database for CompilerDatabase {}
-
-impl CompilerDatabase {
-    pub fn add_package(&self, root: Utf8PathBuf) -> Package {
-        self.intern_package(Arc::new(PackageData {
-            root,
-        }))
-    }
-}
 
 impl fmt::Debug for CompilerDatabase {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -1,4 +1,6 @@
 mod fs;
+pub mod ws;
+mod package;
 
 pub mod db;
 pub mod hir;
