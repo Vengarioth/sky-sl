@@ -1,4 +1,4 @@
-use super::FileDatabase;
+use super::{FileDatabase, file::FileId};
 use salsa::{InternId, InternKey};
 use std::collections::HashSet;
 
@@ -17,7 +17,7 @@ impl InternKey for PathSegment {
 
 impl PathSegment {
     pub fn parent(&self, db: &dyn FileDatabase) -> Option<PathSegment> {
-        db.lookup_intern_path_data(*self).parent()
+        db.lookup_path_data(*self).parent()
     }
 }
 
@@ -28,10 +28,6 @@ pub enum PathSegmentData {
         name: String,
         parent: PathSegment,
     },
-    File {
-        name: String,
-        parent: PathSegment,
-    },
 }
 
 impl PathSegmentData {
@@ -39,87 +35,83 @@ impl PathSegmentData {
         match self {
             PathSegmentData::Root => None,
             PathSegmentData::Directory { parent, .. } => Some(*parent),
-            PathSegmentData::File { parent, .. } => Some(*parent),
-        }
-    }
-
-    pub fn is_file(&self) -> bool {
-        match self {
-            PathSegmentData::Root => false,
-            PathSegmentData::Directory { .. } => false,
-            PathSegmentData::File { .. } => true,
         }
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct DirectoryData {
-    children: HashSet<PathSegment>,
+    directories: HashSet<PathSegment>,
+    files: HashSet<FileId>,
 }
 
 impl DirectoryData {
     pub fn new() -> Self {
         Self {
-            children: HashSet::new(),
+            directories: HashSet::new(),
+            files: HashSet::new(),
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.children.len()
-    }
+    pub fn from_slices(directory_slice: &[PathSegment], file_slice: &[FileId]) -> Self {
+        let mut directories = HashSet::new();
+        let mut files = HashSet::new();
 
-    pub fn from_slice(slice: &[PathSegment]) -> Self {
-        let mut children = HashSet::new();
-        for item in slice {
-            children.insert(*item);
+        for directory in directory_slice {
+            directories.insert(*directory);
+        }
+
+        for file in file_slice {
+            files.insert(*file);
         }
 
         Self {
-            children,
+            directories,
+            files,
         }
     }
 
-    pub fn contains(&self, segment: &PathSegment) -> bool {
-        self.children.contains(segment)
+    pub fn directory_count(&self) -> usize {
+        self.directories.len()
     }
 
-    pub fn with_segment(&self, segment: PathSegment) -> Self {
-        let mut children = self.children.clone();
-        children.insert(segment);
-        Self {
-            children,
-        }
+    pub fn file_count(&self) -> usize {
+        self.files.len()
+    }
+    
+    pub fn directories(&self) -> impl Iterator<Item = &PathSegment> {
+        self.directories.iter()
     }
 
-    pub fn without_segment(&self, segment: PathSegment) -> Self {
-        let mut children = self.children.clone();
-        children.remove(&segment);
-        Self {
-            children,
-        }
+    pub fn files(&self) -> impl Iterator<Item = &FileId> {
+        self.files.iter()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &PathSegment> {
-        self.children.iter()
+    pub fn contains_directory(&self, directory: &PathSegment) -> bool {
+        self.directories.contains(directory)
     }
 
-    pub fn find_by_name(&self, child_name: &str, db: &dyn FileDatabase) -> Option<PathSegment> {
-        for child in &self.children {
-            match db.lookup_intern_path_data(*child) {
-                PathSegmentData::Root => {},
-                PathSegmentData::Directory { name, .. } => {
-                    if name == child_name {
-                        return Some(*child);
-                    }
-                },
-                PathSegmentData::File { name, .. } => {
-                    if name == child_name {
-                        return Some(*child);
-                    }
-                },
-            }
-        }
+    pub fn contains_file(&self, file: &FileId) -> bool {
+        self.files.contains(file)
+    }
 
-        None
+    pub fn with_directory(mut self, directory: PathSegment) -> Self {
+        self.directories.insert(directory);
+        self
+    }
+
+    pub fn without_directory(mut self, directory: PathSegment) -> Self {
+        self.directories.remove(&directory);
+        self
+    }
+
+    pub fn with_file(mut self, file: FileId) -> Self {
+        self.files.insert(file);
+        self
+    }
+
+    pub fn without_file(mut self, file: FileId) -> Self {
+        self.files.remove(&file);
+        self
     }
 }

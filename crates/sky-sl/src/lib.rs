@@ -1,11 +1,10 @@
 mod fs;
-pub mod ws;
 mod package;
 
-pub mod db;
 pub mod hir;
 pub mod lexer;
 pub mod lower;
 pub mod parser;
+pub mod symbol;
 pub mod syn;
 pub mod workspace;

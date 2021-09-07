@@ -1,7 +1,8 @@
+use crate::fs::FileSystemError;
 use thiserror::*;
 
 #[derive(Debug, Error)]
-pub enum WorkspaceError {
-    #[error("No package root found")]
-    NoPackageRootFound,
+pub enum CompileError {
+    #[error("File system error: {0}")]
+    FileSystemError(#[from] FileSystemError),
 }

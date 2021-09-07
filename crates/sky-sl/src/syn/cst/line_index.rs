@@ -1,4 +1,5 @@
 use rowan::{TextSize, TextRange};
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct LineTextRange {
@@ -12,13 +13,13 @@ pub struct TextPosition {
     pub column: u32,
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct LineIndex {
-    newlines: Vec<TextSize>,
+    newlines: Arc<Vec<TextSize>>,
 }
 
 impl LineIndex {
-    pub fn new(input: &str) -> Self {
+    pub fn from_str(input: &str) -> Self {
         let mut newlines = Vec::new();
         newlines.push(0.into());
         
@@ -39,7 +40,7 @@ impl LineIndex {
         }
 
         Self {
-            newlines,
+            newlines: Arc::new(newlines),
         }
     }
 

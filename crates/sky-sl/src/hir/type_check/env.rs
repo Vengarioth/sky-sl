@@ -242,28 +242,3 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
         },
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::db::*;
-    use camino::Utf8PathBuf;
-    use std::str::FromStr;
-    use std::sync::Arc;
-
-    #[test]
-    fn it_works() {
-        let mut db = CompilerDatabase::default();
-
-        let path = Utf8PathBuf::from_str("/foo/bar").unwrap();
-        let input = "fn foo() { let a = 1.0 + 2.0; let b = 3.0; let c = a + b; }".to_string();
-
-        db.set_input_file(path.clone(), Arc::from(input));
-        
-        // let typed = db.types(path);
-        // dbg!(typed);
-
-        dbg!(db.type_at(path.clone(), 0, 0));
-
-        // panic!();
-    }
-}

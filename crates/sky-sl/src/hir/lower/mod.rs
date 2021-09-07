@@ -213,25 +213,3 @@ fn lower_struct_definition(struct_definition: StructDefinition) -> Result<untype
         struct_definition.syntax.text_range()
     ))
 }
-
-#[cfg(test)]
-mod tests {
-    use crate::db::*;
-    use camino::Utf8PathBuf;
-    use std::str::FromStr;
-    use std::sync::Arc;
-
-    #[test]
-    fn it_works() {
-        let mut db = CompilerDatabase::default();
-
-        let path = Utf8PathBuf::from_str("/foo/bar").unwrap();
-        let input = "fn bar(x: Y) -> Bar {} fn foo(a: B) { let a = 1 + 2; } struct Bar { foo: Baz, }".to_string();
-        db.set_input_file(path.clone(), Arc::from(input));
-
-        let ast = db.ast(path.clone());
-        let hir = db.hir(path);
-
-        dbg!(ast.errors(), ast.tree(), hir);
-    }
-}

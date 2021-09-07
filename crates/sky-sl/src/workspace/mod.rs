@@ -1,7 +1,6 @@
-mod bootstrap;
+mod db;
+mod error;
 mod workspace;
-mod manifest;
 
-pub use bootstrap::*;
-pub use manifest::*;
+pub use error::*;
 pub use workspace::*;

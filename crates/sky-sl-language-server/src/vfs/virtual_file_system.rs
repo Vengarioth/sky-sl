@@ -125,22 +125,38 @@ impl VirtualFileSystem {
     }
 
     pub fn create_file(&mut self, path: Utf8PathBuf) -> Result<(), VirtualFileSystemError> {
-        if self.exists(&path) {
-            return Err(VirtualFileSystemError::FileAlreadyExists(path));
-        }
-
         let contents = std::fs::read_to_string(&path).map_err(|_| VirtualFileSystemError::CannotAccessFile(path.clone()))?;
         let contents = Arc::new(contents);
 
-        self.files.push(FileInfo {
-            path: path.clone(),
-            contents: Arc::clone(&contents),
-        });
+        if let Some(index) = self.files.iter().position(|file| file.path == path) {
+            if self.is_file_open(&path)? {
+                return Ok(())
+            }
 
-        self.events.push_back(FileEvent::Created {
-            path: path,
-            contents: contents,
-        });
+            let previous_contents = Arc::clone(&self.files[index].contents);
+
+            self.files[index] = FileInfo {
+                path: path.clone(),
+                contents: Arc::clone(&contents),
+            };
+
+            self.events.push_back(FileEvent::Changed {
+                path: path,
+                previous_contents,
+                new_contents: contents,
+            })
+        } else {
+            self.files.push(FileInfo {
+                path: path.clone(),
+                contents: Arc::clone(&contents),
+            });
+            
+            self.events.push_back(FileEvent::Created {
+                path: path,
+                contents: contents,
+            });
+        }
+
 
         Ok(())
     }
@@ -205,7 +221,26 @@ impl VirtualFileSystem {
         }
     }
 
-    pub fn open_file(&mut self, path: Utf8PathBuf) -> Result<(), VirtualFileSystemError> {
+    pub fn open_file(&mut self, path: Utf8PathBuf, contents: String) -> Result<(), VirtualFileSystemError> {
+        let contents = Arc::new(contents);
+
+        if let Some(index) = self.files.iter().position(|file| file.path == path) {
+            self.files[index] = FileInfo {
+                path: path.clone(),
+                contents: Arc::clone(&contents),
+            };
+        } else {
+            self.files.push(FileInfo {
+                path: path.clone(),
+                contents: Arc::clone(&contents),
+            });
+        }
+
+        self.events.push_back(FileEvent::Opened {
+            path: path.clone(),
+            contents,
+        });
+
         self.open_files.insert(path);
         Ok(())
     }
@@ -215,8 +250,17 @@ impl VirtualFileSystem {
     }
 
     pub fn close_file(&mut self, path: &Utf8Path) -> Result<(), VirtualFileSystemError> {
-        self.open_files.remove(path);
-        Ok(())
+        if let Some(index) = self.files.iter().position(|file| file.path == path) {
+            let contents = Arc::clone(&self.files[index].contents);
+            self.open_files.remove(path);
+            self.events.push_back(FileEvent::Closed {
+                path: path.to_owned(),
+                contents,
+            });
+            Ok(())
+        } else {
+            Err(VirtualFileSystemError::FileDoesNotExist(path.to_owned()))
+        }
     }
 
     pub fn changes(&mut self) -> FileEventIter {

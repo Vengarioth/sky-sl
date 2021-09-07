@@ -2,7 +2,7 @@ use serde::Deserialize;
 use thiserror::Error;
 use std::str::FromStr;
 
-#[derive(Debug, Deserialize, PartialEq, Eq, Clone)]
+#[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct Manifest {
     pub package: PackageManifest,
 }
