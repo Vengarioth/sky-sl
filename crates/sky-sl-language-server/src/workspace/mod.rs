@@ -59,15 +59,27 @@ impl VSCodeWorkspaces {
         self.workspaces.insert(name, VSCodeWorkspace::create(path));
     }
 
+    pub fn hover(&mut self, path: Utf8PathBuf, position: Position) -> Option<Hover> {
+        self.workspaces
+            .values_mut()
+            .find(|workspace| path.starts_with(workspace.root()))
+            .map(|workspace| {
+                workspace.synchronize();
+                let symbols = workspace.workspace.get_symbols(&path).unwrap();
+                let line_index = workspace.workspace.get_line_index(&path).unwrap();
+                crate::queries::hover(symbols, position, line_index)
+            })
+    }
+
     pub fn document_symbols(&mut self, path: Utf8PathBuf) -> Option<DocumentSymbolResponse> {
         self.workspaces
             .values_mut()
             .find(|workspace| path.starts_with(workspace.root()))
             .map(|workspace| {
                 workspace.synchronize();
-                let ast = workspace.workspace.get_ast(&path).unwrap().tree();
+                let symbols = workspace.workspace.get_symbols(&path).unwrap();
                 let line_index = workspace.workspace.get_line_index(&path).unwrap();
-                crate::queries::document_symbols(ast, line_index)
+                crate::queries::document_symbols2(symbols, line_index)
             })
     }
 
@@ -79,7 +91,7 @@ impl VSCodeWorkspaces {
                 workspace.synchronize();
                 let ast = workspace.workspace.get_ast(&path).unwrap().tree();
                 let line_index = workspace.workspace.get_line_index(&path).unwrap();
-                let tokens = crate::semantics::get_semantic_tokens(ast, &line_index);
+                let tokens = crate::queries::get_semantic_tokens(ast, &line_index);
                 SemanticTokensResult::Tokens(tokens)
             })
     }

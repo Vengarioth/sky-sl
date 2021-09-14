@@ -1,10 +1,21 @@
 mod test;
 mod foo;
 
+use foo;
+
 fn foo() { let a = 1.0 + 2.0; let b = 3.0; let c = a + b; }
 
 fn bar() {
     let x = 1.0;
     let y = x * x;
     let z = x * y;
+}
+
+
+fn baz(x: f32) -> f32 {
+
+}
+
+struct Bar {
+    foo_bar: BarFoo,
 }

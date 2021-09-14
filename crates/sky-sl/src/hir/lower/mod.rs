@@ -1,14 +1,25 @@
+use super::HirDatabase;
+use crate::fs::FileId;
 use crate::syn::ast::*;
 use crate::hir::untyped;
 
+mod builder;
 mod error;
-
 pub use error::*;
 
-pub fn lower_ast_to_hir(ast: &Root) -> untyped::Module {
-    
+pub fn lower_ast_to_hir(file: FileId, db: &dyn HirDatabase, ast: &Root) -> untyped::Module {
     let mut items = Vec::new();
     let mut errors = Vec::new();
+
+    for module in ast.modules() {
+        if let Some(x) = module.identifier() {
+            let module_file_name = format!("{}.skysl", x.syntax());
+
+            let parent = db.directory(file);
+            let module_file = db.child_file(parent, module_file_name);
+        }
+    }
+
     for item in ast.module_items() {
         match item.kind() {
             ModuleItemKind::FunctionDefinition(function_definition) => visit_function_definition(function_definition, &mut items, &mut errors),
@@ -128,7 +139,7 @@ fn lower_group_expression(group_expression: GroupExpression) -> Result<untyped::
 fn lower_binary_expression(binary_expression: BinaryExpression) -> Result<untyped::BinaryExpression, LowerToHirError> {
     let lhs = lower_expression(binary_expression.lhs().ok_or_else(|| LowerToHirError::IncompleteExpression)?)?;
     let rhs = lower_expression(binary_expression.rhs().ok_or_else(|| LowerToHirError::IncompleteExpression)?)?;
-    let operator = binary_expression.operator().ok_or_else(|| LowerToHirError::IncompleteExpression)?;
+    let _operator = binary_expression.operator().ok_or_else(|| LowerToHirError::IncompleteExpression)?;
 
     // TODO
     // dbg!(operator);

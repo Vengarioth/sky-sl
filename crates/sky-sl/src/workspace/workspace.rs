@@ -5,6 +5,8 @@ use crate::syn::ast::Root;
 use crate::syn::cst::LineIndex;
 use crate::syn::db::SyntaxDatabase;
 use crate::syn::Parse;
+use crate::hir;
+use crate::hir::*;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::sync::Arc;
 
@@ -28,7 +30,6 @@ impl Workspace {
         contents: Arc<String>,
     ) -> Result<FileId, FileSystemError> {
         let path = path.strip_prefix(&self.root_path).unwrap();
-        dbg!(path);
         insert_file(&mut self.db, path, contents)
     }
 
@@ -59,5 +60,32 @@ impl Workspace {
         })?;
         let line_index = self.db.get_line_index(file_id);
         Ok(line_index)
+    }
+
+    pub fn get_symbols(&mut self, path: &Utf8Path) -> Result<hir::symbol::SymbolList, CompileError> {
+        let path = path.strip_prefix(&self.root_path).unwrap();
+        let file_id = lookup_file(&self.db, path).ok_or_else(|| {
+            CompileError::FileSystemError(FileSystemError::FileDoesNotExist(path.to_owned()))
+        })?;
+        let symbols = self.db.get_symbols(file_id);
+        Ok(symbols)
+    }
+
+    pub fn get_hir(&mut self, path: &Utf8Path) -> Result<hir::untyped::Module, CompileError> {
+        let path = path.strip_prefix(&self.root_path).unwrap();
+        let file_id = lookup_file(&self.db, path).ok_or_else(|| {
+            CompileError::FileSystemError(FileSystemError::FileDoesNotExist(path.to_owned()))
+        })?;
+        let hir = self.db.get_hir(file_id);
+        Ok(hir)
+    }
+
+    pub fn get_typed_hir(&mut self, path: &Utf8Path) -> Result<hir::typed::Module, CompileError> {
+        let path = path.strip_prefix(&self.root_path).unwrap();
+        let file_id = lookup_file(&self.db, path).ok_or_else(|| {
+            CompileError::FileSystemError(FileSystemError::FileDoesNotExist(path.to_owned()))
+        })?;
+        let typed_hir = self.db.get_typed_hir(file_id);
+        Ok(typed_hir)
     }
 }

@@ -1,5 +1,5 @@
 use crate::syn::cst::*;
-use super::{AstNode, FunctionDefinition, StructDefinition, AstChildren, ModuleDeclaration};
+use super::{AstChildren, AstNode, FunctionDefinition, ModuleDeclaration, StructDefinition, UseDeclaration};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct ModuleItem {
@@ -9,7 +9,7 @@ pub struct ModuleItem {
 impl AstNode for ModuleItem {
     fn can_cast_from(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::Fn | SyntaxKind::Struct | SyntaxKind::Module => true,
+            SyntaxKind::Fn | SyntaxKind::Struct | SyntaxKind::Module | SyntaxKind::UseDeclaration => true,
             _ => false,
         }
     }
@@ -29,6 +29,7 @@ impl ModuleItem {
             SyntaxKind::Fn => ModuleItemKind::FunctionDefinition(FunctionDefinition::cast_from(self.syntax.clone()).unwrap()),
             SyntaxKind::Struct => ModuleItemKind::StructDefinition(StructDefinition::cast_from(self.syntax.clone()).unwrap()),
             SyntaxKind::Module => ModuleItemKind::ModuleDeclaration(ModuleDeclaration::cast_from(self.syntax.clone()).unwrap()),
+            SyntaxKind::UseDeclaration => ModuleItemKind::UseDeclaration(UseDeclaration::cast_from(self.syntax.clone()).unwrap()),
             _ => unreachable!(),
         }
     }
@@ -37,6 +38,7 @@ impl ModuleItem {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum ModuleItemKind {
     ModuleDeclaration(ModuleDeclaration),
+    UseDeclaration(UseDeclaration),
     FunctionDefinition(FunctionDefinition),
     StructDefinition(StructDefinition),
 }

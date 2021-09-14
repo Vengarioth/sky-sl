@@ -23,5 +23,5 @@ fn it_works() {
     let _path = insert_file(&mut db, &Utf8PathBuf::from_str("foo/baz.skysl").unwrap(), Arc::new("bbb".to_owned())).unwrap();
     let _path = insert_file(&mut db, &Utf8PathBuf::from_str("baz.skysl").unwrap(), Arc::new("ccc".to_owned())).unwrap();
     let _path = insert_file(&mut db, &Utf8PathBuf::from_str("foo/bar/foo.skysl").unwrap(), Arc::new("ddd".to_owned())).unwrap();
-    let path = insert_file(&mut db, &Utf8PathBuf::from_str("foo/bar/bar.skysl").unwrap(), Arc::new("ddd".to_owned())).unwrap();
+    let _path = insert_file(&mut db, &Utf8PathBuf::from_str("foo/bar/bar.skysl").unwrap(), Arc::new("ddd".to_owned())).unwrap();
 }

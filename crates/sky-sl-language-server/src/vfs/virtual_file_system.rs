@@ -120,10 +120,6 @@ impl VirtualFileSystem {
         &self.root
     }
 
-    pub fn exists(&self, path: &Utf8Path) -> bool {
-        self.files.iter().any(|file| file.path == path)
-    }
-
     pub fn create_file(&mut self, path: Utf8PathBuf) -> Result<(), VirtualFileSystemError> {
         let contents = std::fs::read_to_string(&path).map_err(|_| VirtualFileSystemError::CannotAccessFile(path.clone()))?;
         let contents = Arc::new(contents);

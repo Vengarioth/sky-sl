@@ -17,7 +17,4 @@ pub enum VirtualFileSystemError {
 
     #[error("File does not exist: {0}")]
     FileDoesNotExist(Utf8PathBuf),
-
-    #[error("File already exists: {0}")]
-    FileAlreadyExists(Utf8PathBuf),
 }

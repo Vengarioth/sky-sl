@@ -15,6 +15,7 @@ mod return_type;
 mod root;
 mod structure;
 mod type_identifier;
+mod use_declaration;
 
 pub use expression::*;
 pub use statement::*;
@@ -30,6 +31,7 @@ pub use return_type::*;
 pub use root::*;
 pub use structure::*;
 pub use type_identifier::*;
+pub use use_declaration::*;
 
 pub trait AstNode: Clone {
     fn can_cast_from(kind: SyntaxKind) -> bool;

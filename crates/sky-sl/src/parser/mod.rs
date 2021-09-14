@@ -1,11 +1,13 @@
 use crate::lexer::Token;
-use crate::syn::{Parse, cst::*, ast::Root};
+use crate::syn::{ast::Root, cst::*, Parse};
 
 mod error;
 mod parser;
+mod path;
 mod token_set;
 pub use error::*;
 pub use parser::*;
+pub use path::*;
 pub use token_set::*;
 
 pub fn parse<'a>(token: &'a [Token], input: &'a str) -> Parse<Root> {
@@ -33,8 +35,8 @@ fn parse_item(parser: &mut Parser) {
                 // parse function
                 SyntaxKind::FnKeyword => parse_function(parser),
 
-                // parse use directive
-                SyntaxKind::UseKeyword => parser.error_and_recover(ErrorKind::Unexpected(SyntaxKind::UseKeyword), &token_set(&[SyntaxKind::Semicolon])),
+                // parse use declaration
+                SyntaxKind::UseKeyword => parse_use_declaration(parser),
 
                 // otherwise emit an error and recover
                 kind => parser.error_and_recover(ErrorKind::Unexpected(kind), &token_set(&[])),
@@ -59,12 +61,82 @@ fn parse_module_declaration(parser: &mut Parser) {
         parse_identifier(parser);
 
         if !parser.is_at(SyntaxKind::Semicolon) {
-            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[SyntaxKind::Semicolon, SyntaxKind::FnKeyword, SyntaxKind::StructKeyword]));
+            parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::Semicolon),
+                &token_set(&[
+                    SyntaxKind::Semicolon,
+                    SyntaxKind::FnKeyword,
+                    SyntaxKind::StructKeyword,
+                ]),
+            );
         } else {
             parser.bump();
         }
     });
 }
+
+/// Parses a use declaration
+///
+/// ```ignore
+/// use test::foo;
+/// ```
+fn parse_use_declaration(parser: &mut Parser) {
+    // we already know we want to parse a use
+    parser.node(SyntaxKind::UseDeclaration, |parser| {
+        // consume the `use` keyword
+        parser.bump();
+
+        parser.bump_if(SyntaxKind::Whitespace);
+
+        parse_use_tree(parser);
+
+        if !parser.is_at(SyntaxKind::Semicolon) {
+            parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::Semicolon),
+                &token_set(&[
+                    SyntaxKind::Semicolon,
+                    SyntaxKind::FnKeyword,
+                    SyntaxKind::StructKeyword,
+                    SyntaxKind::UseKeyword,
+                    SyntaxKind::ModKeyword,
+                ]),
+            );
+        } else {
+            parser.bump();
+        }
+    });
+}
+
+fn parse_use_tree(parser: &mut Parser) {
+    parse_use_segment(parser);
+
+    // finish if this is the last segment
+    if !parser.is_at(SyntaxKind::Colon) {
+        return;
+    }
+
+    // missing the second colon is an error
+    if !parser.is_at(SyntaxKind::Colon) {
+        parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::Semicolon),
+            &token_set(&[
+                SyntaxKind::Identifier,
+                SyntaxKind::Comma,
+                SyntaxKind::OpenBrace,
+                SyntaxKind::CloseBrace,
+                SyntaxKind::Semicolon,
+                SyntaxKind::StructKeyword,
+                SyntaxKind::FnKeyword,
+                SyntaxKind::UseKeyword,
+                SyntaxKind::ModKeyword,
+            ]),
+        );
+    }
+}
+
+fn parse_use_group(parser: &mut Parser) {}
+
+fn parse_use_segment(parser: &mut Parser) {}
 
 /// Parses a struct
 ///
@@ -87,7 +159,10 @@ fn parse_struct(parser: &mut Parser) {
         parser.bump_if(SyntaxKind::Whitespace);
 
         if !parser.is_at(SyntaxKind::OpenBrace) {
-            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBrace), &token_set(&[SyntaxKind::CloseBrace]));
+            parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::OpenBrace),
+                &token_set(&[SyntaxKind::CloseBrace]),
+            );
         } else {
             parser.bump();
         }
@@ -210,7 +285,10 @@ fn parse_function_signature(parser: &mut Parser) {
 
                 // parse `>`
                 if !parser.is_at(SyntaxKind::GreatherThan) {
-                    parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::GreatherThan), &token_set(&[]));
+                    parser.error_and_recover(
+                        ErrorKind::NotFound(SyntaxKind::GreatherThan),
+                        &token_set(&[]),
+                    );
                     return;
                 }
                 parser.bump();
@@ -227,19 +305,17 @@ fn parse_function_signature(parser: &mut Parser) {
 /// one: One, two: Two
 /// ```
 fn parse_arguments(parser: &mut Parser) {
-    parser.node(SyntaxKind::ArgumentList, |parser| {
-        loop {
-            parser.bump_if(SyntaxKind::Whitespace);
+    parser.node(SyntaxKind::ArgumentList, |parser| loop {
+        parser.bump_if(SyntaxKind::Whitespace);
 
-            if !parser.is_at(SyntaxKind::Identifier) {
-                break;
-            }
-
-            parse_argument(parser);
-
-            parser.bump_if(SyntaxKind::Whitespace);
-            parser.bump_if(SyntaxKind::Comma);
+        if !parser.is_at(SyntaxKind::Identifier) {
+            break;
         }
+
+        parse_argument(parser);
+
+        parser.bump_if(SyntaxKind::Whitespace);
+        parser.bump_if(SyntaxKind::Comma);
     });
 }
 
@@ -252,7 +328,14 @@ fn parse_argument(parser: &mut Parser) {
         parse_identifier(parser);
 
         if parser.ws().current() != SyntaxKind::Colon {
-            parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Colon), &token_set(&[SyntaxKind::Comma, SyntaxKind::Identifier, SyntaxKind::CloseParen]));
+            parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::Colon),
+                &token_set(&[
+                    SyntaxKind::Comma,
+                    SyntaxKind::Identifier,
+                    SyntaxKind::CloseParen,
+                ]),
+            );
         } else {
             parser.bump();
         }
@@ -267,7 +350,10 @@ fn parse_argument(parser: &mut Parser) {
 fn parse_identifier(parser: &mut Parser) {
     let current = parser.ws().current();
     if current != SyntaxKind::Identifier {
-        parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Identifier), &token_set(&[SyntaxKind::OpenParen, SyntaxKind::CloseParen]));
+        parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::Identifier),
+            &token_set(&[SyntaxKind::OpenParen, SyntaxKind::CloseParen]),
+        );
     } else {
         parser.node(SyntaxKind::Identifier, |parser| parser.bump());
     }
@@ -276,7 +362,10 @@ fn parse_identifier(parser: &mut Parser) {
 fn parse_type_identifier(parser: &mut Parser) {
     let current = parser.ws().current();
     if current != SyntaxKind::Identifier {
-        parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Identifier), &token_set(&[SyntaxKind::Comma, SyntaxKind::CloseParen]));
+        parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::Identifier),
+            &token_set(&[SyntaxKind::Comma, SyntaxKind::CloseParen]),
+        );
         return;
     }
 
@@ -286,19 +375,18 @@ fn parse_type_identifier(parser: &mut Parser) {
 /// Parses a block of statements
 fn parse_block(parser: &mut Parser) {
     // TODO move braces in here?
-    parser.node(SyntaxKind::Block, |parser| {
-        loop {
-            parser.bump_if(SyntaxKind::Whitespace);
-            if parser.eof() {
-                return parser.error_and_recover(ErrorKind::Unexpected(parser.current()), &token_set(&[]));
-            }
-
-            if parser.is_at(SyntaxKind::CloseBrace) {
-                return;
-            }
-
-            parse_statement(parser);
+    parser.node(SyntaxKind::Block, |parser| loop {
+        parser.bump_if(SyntaxKind::Whitespace);
+        if parser.eof() {
+            return parser
+                .error_and_recover(ErrorKind::Unexpected(parser.current()), &token_set(&[]));
         }
+
+        if parser.is_at(SyntaxKind::CloseBrace) {
+            return;
+        }
+
+        parse_statement(parser);
     });
 }
 
@@ -316,37 +404,43 @@ fn parse_let_statement(parser: &mut Parser) {
         // assume we are at the `let` keyword
         if !parser.is_at(SyntaxKind::LetKeyword) {
             // error
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::LetKeyword), &token_set(&[SyntaxKind::Semicolon]));
+            return parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::LetKeyword),
+                &token_set(&[SyntaxKind::Semicolon]),
+            );
         }
         parser.bump();
-    
+
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         // parse the identifier
         parse_identifier(parser);
-    
-        
+
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         if parser.is_at(SyntaxKind::Colon) {
             // TODO parse type annotation
         }
-    
+
         // parse the `=`
         if !parser.is_at(SyntaxKind::Equals) {
             // error
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Equals), &token_set(&[SyntaxKind::Semicolon]));
+            return parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::Equals),
+                &token_set(&[SyntaxKind::Semicolon]),
+            );
         }
         parser.bump();
-    
+
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         parse_expression(parser);
-    
+
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         if !parser.is_at(SyntaxKind::Semicolon) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
+            return parser
+                .error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
         }
         parser.bump();
     });
@@ -355,13 +449,14 @@ fn parse_let_statement(parser: &mut Parser) {
 fn parse_expression_statement(parser: &mut Parser) {
     parser.node(SyntaxKind::ExpressionStatement, |parser| {
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         parse_expression(parser);
-    
+
         parser.bump_if(SyntaxKind::Whitespace);
-    
+
         if !parser.is_at(SyntaxKind::Semicolon) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
+            return parser
+                .error_and_recover(ErrorKind::NotFound(SyntaxKind::Semicolon), &token_set(&[]));
         }
         parser.bump();
     });
@@ -377,7 +472,7 @@ fn parse_binary_expression(parser: &mut Parser, min_precedence: u8) {
 
     let checkpoint = parser.checkpoint();
     parse_primary_expression(parser);
-        
+
     while let Some(operator) = peek_operator(parser) {
         if operator.precedence() < min_precedence {
             break;
@@ -404,7 +499,7 @@ fn parse_primary_expression(parser: &mut Parser) {
         SyntaxKind::Minus | SyntaxKind::Bang => {
             // prefix expression
             todo!();
-        },
+        }
         _ => {
             let checkpoint = parser.checkpoint();
             parse_atom_expression(parser);
@@ -420,7 +515,7 @@ fn parse_primary_expression(parser: &mut Parser) {
                 }
                 parser.ws();
             }
-        },
+        }
     }
 }
 
@@ -429,29 +524,31 @@ fn parse_call_expression(checkpoint: Checkpoint, parser: &mut Parser) {
     parser.node(SyntaxKind::CallArgumentList, |parser| {
         // parse open paren
         if !parser.is_at(SyntaxKind::OpenParen) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenParen), &token_set(&[]));
+            return parser
+                .error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenParen), &token_set(&[]));
         }
         parser.bump();
-    
+
         while !parser.is_at(SyntaxKind::CloseParen) && !parser.eof() {
             parser.ws();
-    
+
             if parser.is_at(SyntaxKind::CloseParen) {
                 break;
             }
-    
+
             parse_expression(parser);
             parser.ws();
-    
+
             if !parser.is_at(SyntaxKind::Comma) {
                 break;
             }
             parser.bump();
         }
-    
+
         // parse close paren
         if !parser.is_at(SyntaxKind::CloseParen) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[]));
+            return parser
+                .error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[]));
         }
         parser.bump();
     });
@@ -463,7 +560,10 @@ fn parse_index_expression(checkpoint: Checkpoint, parser: &mut Parser) {
 
     // parse open bracket
     if !parser.is_at(SyntaxKind::OpenBracket) {
-        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBracket), &token_set(&[]));
+        return parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::OpenBracket),
+            &token_set(&[]),
+        );
     }
     parser.bump();
 
@@ -472,7 +572,10 @@ fn parse_index_expression(checkpoint: Checkpoint, parser: &mut Parser) {
 
     // parse close bracket
     if !parser.is_at(SyntaxKind::CloseBracket) {
-        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseBracket), &token_set(&[]));
+        return parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::CloseBracket),
+            &token_set(&[]),
+        );
     }
     parser.bump();
 
@@ -491,15 +594,16 @@ fn parse_field_access_expression(checkpoint: Checkpoint, parser: &mut Parser) {
     parser.bump();
 
     if let Some(_) = parse_path_expression(parser) {
-
         // parse method calls e.g. `a.b()`
         if parser.is_at(SyntaxKind::OpenParen) {
             parse_call_expression(checkpoint, parser);
             todo!("Methods are not implemented and we currently parse them incorrectly");
         }
-
     } else {
-        return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBracket), &token_set(&[]));
+        return parser.error_and_recover(
+            ErrorKind::NotFound(SyntaxKind::OpenBracket),
+            &token_set(&[]),
+        );
     }
 
     // TODO
@@ -512,11 +616,14 @@ fn parse_atom_expression(parser: &mut Parser) {
     if current == SyntaxKind::OpenParen {
         return parser.node(SyntaxKind::GroupExpression, |parser| {
             parser.bump();
-    
+
             parse_expression(parser);
 
             if !parser.ws().is_at(SyntaxKind::CloseParen) {
-                return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseParen), &token_set(&[SyntaxKind::Semicolon]));
+                return parser.error_and_recover(
+                    ErrorKind::NotFound(SyntaxKind::CloseParen),
+                    &token_set(&[SyntaxKind::Semicolon]),
+                );
             }
             parser.bump();
         });
@@ -528,7 +635,7 @@ fn parse_atom_expression(parser: &mut Parser) {
 
         match parser.ws().current() {
             SyntaxKind::OpenBrace => parse_struct_expression(checkpoint, parser),
-            _ => {},
+            _ => {}
         }
 
         return;
@@ -538,46 +645,58 @@ fn parse_atom_expression(parser: &mut Parser) {
         return;
     }
 
-    return parser.error_and_recover(ErrorKind::Unexpected(parser.current()), &token_set(&[SyntaxKind::Semicolon]));
+    return parser.error_and_recover(
+        ErrorKind::Unexpected(parser.current()),
+        &token_set(&[SyntaxKind::Semicolon]),
+    );
 }
 
 fn parse_struct_expression(checkpoint: Checkpoint, parser: &mut Parser) {
     parser.begin_node_at(checkpoint, SyntaxKind::StructExpression);
     parser.node(SyntaxKind::StructExpressionFields, |parser| {
         if !parser.is_at(SyntaxKind::OpenBrace) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::OpenBrace), &token_set(&[SyntaxKind::Semicolon]));
+            return parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::OpenBrace),
+                &token_set(&[SyntaxKind::Semicolon]),
+            );
         }
         parser.bump();
-    
+
         while !parser.is_at(SyntaxKind::CloseBrace) && !parser.eof() {
             parser.ws();
-    
+
             if parser.is_at(SyntaxKind::CloseBrace) {
                 break;
             }
-    
+
             parser.node(SyntaxKind::StructExpressionField, |parser| {
                 parse_identifier(parser);
                 parser.ws();
-        
+
                 if !parser.is_at(SyntaxKind::Colon) {
-                    return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::Colon), &token_set(&[SyntaxKind::Semicolon]));
+                    return parser.error_and_recover(
+                        ErrorKind::NotFound(SyntaxKind::Colon),
+                        &token_set(&[SyntaxKind::Semicolon]),
+                    );
                 }
                 parser.bump();
                 parser.ws();
-        
+
                 parse_expression(parser);
             });
             parser.ws();
-    
+
             if !parser.is_at(SyntaxKind::Comma) {
                 break;
             }
             parser.bump();
         }
-    
+
         if !parser.is_at(SyntaxKind::CloseBrace) {
-            return parser.error_and_recover(ErrorKind::NotFound(SyntaxKind::CloseBrace), &token_set(&[SyntaxKind::Semicolon]));
+            return parser.error_and_recover(
+                ErrorKind::NotFound(SyntaxKind::CloseBrace),
+                &token_set(&[SyntaxKind::Semicolon]),
+            );
         }
         parser.bump();
     });
@@ -590,8 +709,8 @@ fn peek_operator(parser: &mut Parser) -> Option<Operator> {
 
     // TODO
     match (current, next) {
-        (SyntaxKind::Equals, Some(SyntaxKind::Equals)) => {},
-        _ => {},
+        (SyntaxKind::Equals, Some(SyntaxKind::Equals)) => {}
+        _ => {}
     }
 
     if let Some(operator) = current.operator() {
@@ -687,15 +806,7 @@ mod tests {
     ];
 
     // A list of incomplete expressions, to test that the parser terminates
-    const INCOMPLETE_EXPRESSIONS: &[&str] = &[
-        "",
-        "1)",
-        "+ 1)",
-        "(",
-        "(1",
-        "(1 +",
-        "(1 + 2",
-    ];
+    const INCOMPLETE_EXPRESSIONS: &[&str] = &["", "1)", "+ 1)", "(", "(1", "(1 +", "(1 + 2"];
 
     #[test]
     fn test_parse_empty_function() {
@@ -735,7 +846,6 @@ mod tests {
         let input = "fn foo() -> Bar { let a = b; }";
         let mut current = String::new();
         for c in input.chars() {
-
             let token = tokenize(&current);
             let parsed = parse(&token, &current);
             dbg!(&current, parsed.tree());

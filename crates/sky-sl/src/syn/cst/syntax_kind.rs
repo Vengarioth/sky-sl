@@ -5,6 +5,12 @@ pub enum SyntaxKind {
     /// A module
     Module,
 
+    /// A module declaration
+    ModuleDeclaration,
+
+    /// A use declaration
+    UseDeclaration,
+    
     /// A struct
     Struct,
 
@@ -28,6 +34,9 @@ pub enum SyntaxKind {
 
     /// A return type declaration e.g. `-> SomeType`
     ReturnType,
+
+    /// A path e.g. `foo::bar`
+    Path,
 
     /// Block
     Block,
@@ -200,7 +209,7 @@ impl SyntaxKind {
         use self::SyntaxKind::*;
 
         match self {
-            StructKeyword | FnKeyword => true,
+            StructKeyword | FnKeyword | UseKeyword | ModKeyword | LetKeyword => true,
             _ => false,
         }
     }

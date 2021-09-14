@@ -2,11 +2,9 @@ use std::num::NonZeroU32;
 
 mod line_index;
 mod syntax_kind;
-mod trivia;
 
 pub use line_index::*;
 pub use syntax_kind::*;
-pub use trivia::*;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct SyntaxId(NonZeroU32);

@@ -39,12 +39,21 @@ fn visit_root(root: Root, builder: &mut SemanticTokensBuilder) {
             ModuleItemKind::ModuleDeclaration(module_declaration) => {
                 visit_module_declaration(module_declaration, builder);
             },
+            ModuleItemKind::UseDeclaration(module_declaration) => {
+                visit_use_declaration(module_declaration, builder);
+            },
         }
     }
 }
 
 fn visit_module_declaration(module_declaration: ModuleDeclaration, builder: &mut SemanticTokensBuilder) {
     if let Some(keyword) = module_declaration.syntax().first_token() {
+        builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+    }
+}
+
+fn visit_use_declaration(use_declaration: UseDeclaration, builder: &mut SemanticTokensBuilder) {
+    if let Some(keyword) = use_declaration.syntax().first_token() {
         builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
     }
 }

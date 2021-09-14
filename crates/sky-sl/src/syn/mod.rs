@@ -3,9 +3,10 @@ use crate::parser::SyntaxError;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-pub mod db;
 pub mod ast;
 pub mod cst;
+pub mod parse;
+pub mod db;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Parse<T> {

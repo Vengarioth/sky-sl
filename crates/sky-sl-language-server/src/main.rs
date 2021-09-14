@@ -6,7 +6,6 @@ use tower_lsp::lsp_types::*;
 use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 mod queries;
-mod semantics;
 mod vfs;
 mod workspace;
 
@@ -51,13 +50,14 @@ impl LanguageServer for Backend {
                 semantic_tokens_provider: Some(
                     SemanticTokensServerCapabilities::SemanticTokensOptions(
                         SemanticTokensOptions {
-                            legend: semantics::get_legend(),
+                            legend: crate::queries::get_legend(),
                             full: Some(SemanticTokensFullOptions::Delta { delta: Some(true) }),
                             range: None,
                             work_done_progress_options: Default::default(),
                         },
                     ),
                 ),
+                hover_provider: Some(HoverProviderCapability::Simple(true)),
                 ..ServerCapabilities::default()
             },
         })
@@ -71,6 +71,12 @@ impl LanguageServer for Backend {
 
     async fn shutdown(&self) -> Result<()> {
         Ok(())
+    }
+
+    async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
+        let path = url_to_path(&params.text_document_position_params.text_document.uri)?;
+        let position = params.text_document_position_params.position;
+        Ok(self.vscode_workspaces.lock().unwrap().hover(path, position))
     }
 
     async fn document_symbol(

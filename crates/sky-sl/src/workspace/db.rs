@@ -1,12 +1,14 @@
 use crate::fs::db::*;
 use crate::package::*;
 use crate::syn::db::*;
+use crate::hir::*;
 use std::fmt;
 
 #[salsa::database(
     FileDatabaseStorage,
     PackageDatabaseStorage,
     SyntaxDatabaseStorage,
+    HirDatabaseStorage,
 )]
 #[derive(Default)]
 pub struct CompilerDatabase {
