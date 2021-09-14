@@ -95,6 +95,5 @@ mod tests {
         let input = "mod - mod foo;";
         let token =lexer::tokenize(input);
         parse(&token, input);
-        panic!();
     }
 }
