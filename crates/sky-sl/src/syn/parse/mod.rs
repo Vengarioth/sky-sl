@@ -12,6 +12,7 @@ macro_rules! t {
     [:] => {$crate::syn::cst::SyntaxKind::Colon};
     [;] => {$crate::syn::cst::SyntaxKind::Semicolon};
     [,] => {$crate::syn::cst::SyntaxKind::Comma};
+    [*] => {$crate::syn::cst::SyntaxKind::Star};
     ['{'] => {$crate::syn::cst::SyntaxKind::OpenBrace};
     ['}'] => {$crate::syn::cst::SyntaxKind::CloseBrace};
     [mod] => {$crate::syn::cst::SyntaxKind::ModKeyword};
@@ -22,10 +23,10 @@ macro_rules! t {
     [ident] => {$crate::syn::cst::SyntaxKind::Identifier};
 }
 
-pub fn parse<'a>(token: &'a [Token], input: &'a str) {
+pub fn parse<'a>(token: &'a [Token], input: &'a str) -> ParseResult {
     let mut parser = Parser::new(token, input);
     parse_module(&mut parser);
-    dbg!(parser.finish::<crate::syn::ast::Root>());
+    parser.finish()
 }
 
 /// parses a module
@@ -38,6 +39,8 @@ fn parse_module(parser: &mut Parser) {
                 }
                 SyntaxKind::ModKeyword => parse_module_declaration(parser),
                 SyntaxKind::UseKeyword => parse_use_declaration(parser),
+                SyntaxKind::StructKeyword => parse_struct_declaration(parser),
+                SyntaxKind::FnKeyword => parse_function_declaration(parser),
                 _ => unimplemented!(),
             }
         }
@@ -72,17 +75,217 @@ fn parse_use_declaration(parser: &mut Parser) {
 
 /// parses a use tree, e.g. `module_b::module_c`
 fn parse_use_tree(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::UseTree);
+    parse_use_segment(parser);
+    parser.ws0();
 
+    if parser.is_at(SyntaxKind::Colon) {
+        parser.expect(
+            t![:],
+            &[
+                t![;],
+                t!['{'],
+                t!['}'],
+                t![mod],
+                t![use],
+                t![fn],
+                t![struct],
+            ],
+        );
+        parser.expect(
+            t![:],
+            &[
+                t![;],
+                t!['{'],
+                t!['}'],
+                t![mod],
+                t![use],
+                t![fn],
+                t![struct],
+            ],
+        );
+
+        parser.ws0();
+        if parser.is_at(t![*]) {
+            parser.begin_node(SyntaxKind::UseAll);
+            parser.consume(t![*]);
+            parser.end_node();
+        } else if parser.is_at(SyntaxKind::OpenBrace) {
+            parse_use_group(parser);
+        } else {
+            parse_use_tree(parser);
+        }
+    }
+
+    parser.end_node();
 }
 
 /// parses a use group, e.g. `{module_a, module_b::c}`
 fn parse_use_group(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::UseGroup);
+    parser.consume(t!['{']);
+    parser.ws0();
 
+    loop {
+        if !parser.is_at(t![ident]) {
+            break;
+        }
+
+        parse_use_tree(parser);
+
+        parser.ws0();
+
+        if !parser.consume_if(t![,]) {
+            break;
+        }
+
+        parser.ws0();
+    }
+
+    parser.expect(
+        t!['}'],
+        &[t![:], t![;], t![mod], t![use], t![fn], t![struct]],
+    );
+    parser.end_node();
 }
 
 /// parses a use segment, meaning an identifier or a `package` keyword
 fn parse_use_segment(parser: &mut Parser) {
-    parser.expect_any(&[t![ident], t![package]], &[t!['{'], t!['}'], t![,], t![;], t![mod], t![use], t![fn], t![struct]]);
+    parser.begin_node(SyntaxKind::UseSegment);
+    parser.expect_any(
+        &[t![ident], t![package]],
+        &[
+            t!['{'],
+            t!['}'],
+            t![,],
+            t![:],
+            t![;],
+            t![mod],
+            t![use],
+            t![fn],
+            t![struct],
+        ],
+    );
+    parser.end_node();
+}
+
+/// parses an entire struct declaration, e.g. `struct MyStruct { member: MemberType, }`
+fn parse_struct_declaration(parser: &mut Parser) {
+    parser.node(SyntaxKind::Struct, |parser| {
+        // parse struct keyword
+        parser.consume(t![struct]);
+        parser.ws0();
+
+        // parse the struct name
+        parser.begin_node(SyntaxKind::Name);
+        parser.expect(
+            t![ident],
+            &[t!['{'], t!['}'], t![mod], t![use], t![fn], t![struct]],
+        );
+        parser.end_node();
+        parser.ws0();
+
+        // parse open brace
+        parser.expect(
+            SyntaxKind::OpenBrace,
+            &[SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct]],
+        );
+        parser.ws0();
+
+        parse_struct_member_list(parser);
+
+        // parse close brace
+        parser.expect(
+            SyntaxKind::CloseBrace,
+            &[t![mod], t![use], t![fn], t![struct]],
+        );
+    });
+}
+
+/// parses struct members repeatedly, e.g. `member_a: MemberTypeA, member_b: MemberTypeB,`
+fn parse_struct_member_list(parser: &mut Parser) {
+    parser.node(SyntaxKind::MemberList, |parser| {
+        loop {
+            if !parser.is_at(SyntaxKind::Identifier) {
+                break;
+            }
+
+            parser.begin_node(SyntaxKind::Member);
+
+            // parse the member name
+            parser.begin_node(SyntaxKind::Name);
+            parser.expect(
+                SyntaxKind::Identifier,
+                &[
+                    SyntaxKind::CloseBrace,
+                    t![:],
+                    t![,],
+                    t![mod],
+                    t![use],
+                    t![fn],
+                    t![struct],
+                ],
+            );
+            parser.end_node();
+            parser.ws0();
+
+            // parse the : before the type
+            parser.expect(
+                t![:],
+                &[
+                    SyntaxKind::CloseBrace,
+                    t![,],
+                    t![mod],
+                    t![use],
+                    t![fn],
+                    t![struct],
+                ],
+            );
+            parser.ws0();
+
+            // parse the type
+            parse_item_path(parser);
+            parser.ws0();
+
+            parser.end_node();
+
+            // parse the comma
+            if !parser.consume_if(t![,]) {
+                break;
+            }
+
+            parser.ws0();
+        }
+
+        parser.ws0();
+    });
+}
+
+/// parses an item path that targets a singular item, e.g. `foo::bar::Baz`
+fn parse_item_path(parser: &mut Parser) {
+    loop {
+        parser.expect(
+            t![ident],
+            &[t![:], t![,], t![mod], t![use], t![fn], t![struct]],
+        );
+        parser.ws0();
+
+        if parser.consume_if(t![:]) {
+            parser.expect(
+                t![:],
+                &[t![ident], t![,], t![mod], t![use], t![fn], t![struct]],
+            );
+            parser.ws0();
+        } else {
+            break;
+        }
+    }
+}
+
+fn parse_function_declaration(parser: &mut Parser) {
+    // parse fn keyword
+    parser.consume(t![fn]);
+    parser.ws0();
 }
 
 #[cfg(test)]
@@ -92,8 +295,64 @@ mod tests {
 
     #[test]
     fn test_module_declaration() {
-        let input = "mod - mod foo;";
-        let token =lexer::tokenize(input);
-        parse(&token, input);
+        let input = "mod foo;";
+        let token = lexer::tokenize(input);
+        let result = parse(&token, input);
+        assert_eq!(result.diagnostics.len(), 0);
+    }
+
+    #[test]
+    fn test_use_declaration() {
+        let inputs = [
+            "use foo;",
+            "use foo::bar;",
+            "use foo::{};",
+            "use foo::{bar};",
+            "use foo::{bar,};",
+            "use foo::{bar, baz};",
+            "use foo::{bar::foo, baz};",
+            "use foo::{bar::{foo, bar}, baz};",
+            "use foo::*;",
+            "use foo::{bar::*};",
+            "use foo::{bar::*,};",
+            "use foo::{bar::*, baz::*};",
+            "use foo::bar::baz::a::b::c;",
+            "use foo::bar::baz::a::b::c::*;",
+            "use package::foo;",
+            "use package::*;",
+            "use package::foo::*;",
+        ];
+
+        for input in inputs {
+            let token = lexer::tokenize(input);
+            let result = parse(&token, input);
+            assert_eq!(result.diagnostics.len(), 0);
+        }
+    }
+
+    #[test]
+    fn test_struct_declaration() {
+        let inputs = [
+            "struct Foo{}",
+            "struct Foo {}",
+            "struct Foo { }",
+            "struct Foo{foo:Bar}",
+            "struct Foo { foo : Bar }",
+            "struct Foo {foo:Bar,}",
+            "struct Foo {foo:Bar,bar:Foo}",
+            "struct Foo { foo: Bar, bar: Foo }",
+            "struct Foo { foo: bar::Baz, bar: Foo }",
+            "struct Foo { foo: bar::Baz, bar: foo::foo::Foo }",
+        ];
+
+        for input in inputs {
+            let token = lexer::tokenize(input);
+            let result = parse(&token, input);
+            dbg!(&result.diagnostics);
+            dbg!(result.tree());
+            assert_eq!(result.diagnostics.len(), 0);
+        }
+
+        panic!();
     }
 }

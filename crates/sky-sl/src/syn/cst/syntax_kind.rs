@@ -10,7 +10,14 @@ pub enum SyntaxKind {
 
     /// A use declaration
     UseDeclaration,
-    
+
+    UseTree,
+    UseGroup,
+    UseSegment,
+    UseAll,
+
+    Name,
+
     /// A struct
     Struct,
 

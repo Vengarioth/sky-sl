@@ -1,5 +1,11 @@
-use crate::{lexer::Token, syn::cst::*};
 use super::ParseDiagnostic;
+use crate::{
+    lexer::Token,
+    syn::{
+        ast::{AstNode, Root},
+        cst::*,
+    },
+};
 
 #[derive(Debug)]
 pub struct Parser<'a> {
@@ -45,12 +51,14 @@ impl<'a> Parser<'a> {
         Some(self.token[1].kind())
     }
 
+    /// consumes zero or one whitespace token
     pub fn ws0(&mut self) {
         if self.is_at(SyntaxKind::Whitespace) {
             self.bump();
         }
     }
 
+    /// consumes one whitespace token
     pub fn ws1(&mut self) {
         if self.is_at(SyntaxKind::Whitespace) {
             self.bump();
@@ -105,6 +113,9 @@ impl<'a> Parser<'a> {
                 if self.is_at_any(recover) {
                     self.missing(&[token]);
                     break;
+                } else if self.eof() {
+                    self.missing(&[token]);
+                    break;
                 } else {
                     self.skip(&[token]);
                 }
@@ -115,10 +126,17 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn expect_any(&mut self, token: &[SyntaxKind], recover: &[SyntaxKind]) -> Option<SyntaxKind> {
+    pub fn expect_any(
+        &mut self,
+        token: &[SyntaxKind],
+        recover: &[SyntaxKind],
+    ) -> Option<SyntaxKind> {
         loop {
             if !self.is_at_any(token) {
                 if self.is_at_any(recover) {
+                    self.missing(token);
+                    break;
+                } else if self.eof() {
                     self.missing(token);
                     break;
                 } else {
@@ -159,7 +177,9 @@ impl<'a> Parser<'a> {
 
     pub fn skip(&mut self, expected: &[SyntaxKind]) {
         let skipped = self.current();
+        self.begin_node(SyntaxKind::Error);
         self.bump();
+        self.end_node();
         self.diagnostics.push(ParseDiagnostic::SkippedToken {
             location: (self.offset as u32).into(),
             skipped,
@@ -203,13 +223,30 @@ impl<'a> Parser<'a> {
         self.builder.token(kind.into(), text);
     }
 
-    pub fn finish<T: crate::syn::ast::AstNode>(self) -> T {
-        dbg!(self.diagnostics);
+    pub fn finish(self) -> ParseResult {
         let root = self.builder.finish();
-        T::cast_from(SyntaxNode::new_root(root)).unwrap()
+        let diagnostics = self.diagnostics;
+
+        ParseResult::new(root, diagnostics)
     }
 
     pub fn remaining(&self) -> Vec<SyntaxKind> {
         self.token.iter().map(|t| t.kind()).collect()
+    }
+}
+
+#[derive(Debug)]
+pub struct ParseResult {
+    pub root: GreenNode,
+    pub diagnostics: Vec<ParseDiagnostic>,
+}
+
+impl ParseResult {
+    pub fn new(root: GreenNode, diagnostics: Vec<ParseDiagnostic>) -> Self {
+        Self { root, diagnostics }
+    }
+
+    pub fn tree(&self) -> Root {
+        <Root as AstNode>::cast_from(SyntaxNode::new_root(self.root.clone())).unwrap()
     }
 }
