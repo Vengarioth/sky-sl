@@ -13,8 +13,13 @@ macro_rules! t {
     [;] => {$crate::syn::cst::SyntaxKind::Semicolon};
     [,] => {$crate::syn::cst::SyntaxKind::Comma};
     [*] => {$crate::syn::cst::SyntaxKind::Star};
+    [-] => {$crate::syn::cst::SyntaxKind::Minus};
     ['{'] => {$crate::syn::cst::SyntaxKind::OpenBrace};
     ['}'] => {$crate::syn::cst::SyntaxKind::CloseBrace};
+    ['('] => {$crate::syn::cst::SyntaxKind::OpenParen};
+    [')'] => {$crate::syn::cst::SyntaxKind::CloseParen};
+    [<] => {$crate::syn::cst::SyntaxKind::LessThan};
+    [>] => {$crate::syn::cst::SyntaxKind::GreatherThan};
     [mod] => {$crate::syn::cst::SyntaxKind::ModKeyword};
     [use] => {$crate::syn::cst::SyntaxKind::UseKeyword};
     [fn] => {$crate::syn::cst::SyntaxKind::FnKeyword};
@@ -263,29 +268,199 @@ fn parse_struct_member_list(parser: &mut Parser) {
 
 /// parses an item path that targets a singular item, e.g. `foo::bar::Baz`
 fn parse_item_path(parser: &mut Parser) {
-    loop {
+    parser.begin_node(SyntaxKind::Path);
+    parse_item_path_segment(parser);
+    parser.end_node();
+}
+
+/// recursively parses path segments, e.g. `foo::bar::Baz`
+fn parse_item_path_segment(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::PathSegment);
+
+    parser.begin_node(SyntaxKind::Name);
+    parser.expect(
+        t![ident],
+        &[t![:], t![,], t![;], t![mod], t![use], t![fn], t![struct]],
+    );
+    parser.end_node();
+    parser.ws0();
+
+    if parser.consume_if(t![:]) {
         parser.expect(
-            t![ident],
-            &[t![:], t![,], t![mod], t![use], t![fn], t![struct]],
+            t![:],
+            &[
+                t![ident],
+                t![,],
+                t![;],
+                t![mod],
+                t![use],
+                t![fn],
+                t![struct],
+            ],
         );
         parser.ws0();
 
-        if parser.consume_if(t![:]) {
-            parser.expect(
+        parse_item_path_segment(parser);
+    }
+
+    parser.end_node();
+}
+
+/// parse a function declaration, e.g. `fn my_function() {}`
+fn parse_function_declaration(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::Fn);
+    // parse fn keyword
+    parser.consume(t![fn]);
+    parser.ws0();
+
+    parser.begin_node(SyntaxKind::FnSignature);
+
+    // parse the function name
+    parser.begin_node(SyntaxKind::Name);
+    parser.expect(
+        t![ident],
+        &[
+            t!['('],
+            t![')'],
+            t![-],
+            t![>],
+            t!['{'],
+            t!['}'],
+            t![mod],
+            t![use],
+            t![fn],
+            t![struct],
+        ],
+    );
+    parser.end_node();
+    parser.ws0();
+
+    parser.expect(
+        SyntaxKind::OpenParen,
+        &[
+            t![-],
+            t![>],
+            t![:],
+            t!['{'],
+            t!['}'],
+            t![ident],
+            t![mod],
+            t![use],
+            t![fn],
+            t![struct],
+        ],
+    );
+    parser.ws0();
+
+    // parse the function arguments
+    parse_argument_list(parser);
+
+    parser.expect(
+        SyntaxKind::CloseParen,
+        &[
+            t![-],
+            t![>],
+            t!['{'],
+            t!['}'],
+            t![ident],
+            t![mod],
+            t![use],
+            t![fn],
+            t![struct],
+        ],
+    );
+    parser.ws0();
+
+    // parse optional return type
+    if parser.is_at(t![-]) {
+        parser.begin_node(SyntaxKind::ReturnType);
+        parser.consume(t![-]);
+        parser.expect(
+            t![>],
+            &[
+                t![ident],
                 t![:],
-                &[t![ident], t![,], t![mod], t![use], t![fn], t![struct]],
-            );
+                t!['{'],
+                t!['}'],
+                t![mod],
+                t![use],
+                t![fn],
+                t![struct],
+            ],
+        );
+        parser.ws0();
+        parse_item_path(parser);
+        parser.end_node();
+        parser.ws0();
+    }
+
+    parser.end_node();
+
+    parse_block(parser);
+
+    parser.end_node();
+}
+
+/// parses a list of arguments, e.g. `(foo: Bar)`
+fn parse_argument_list(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::ArgumentList);
+
+    loop {
+        if !parser.is_at(SyntaxKind::Identifier) {
+            break;
+        }
+
+        parse_argument(parser);
+        parser.ws0();
+
+        if parser.is_at(t![,]) {
+            parser.consume(t![,]);
             parser.ws0();
         } else {
             break;
         }
     }
+
+    parser.end_node();
 }
 
-fn parse_function_declaration(parser: &mut Parser) {
-    // parse fn keyword
-    parser.consume(t![fn]);
+/// parses a single argument, e.g. `foo: bar::Bar`
+fn parse_argument(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::Argument);
+    parser.begin_node(SyntaxKind::Name);
+    // consume the identifier
+    parser.consume(SyntaxKind::Identifier);
+    parser.end_node();
     parser.ws0();
+
+    parser.expect(
+        t![:],
+        &[
+            t![:],
+            t![,],
+            t!['('],
+            t![')'],
+            t![-],
+            t![>],
+            t![ident],
+            t![mod],
+            t![use],
+            t![fn],
+            t![struct],
+        ],
+    );
+    parser.ws0();
+
+    parse_item_path(parser);
+    parser.end_node();
+}
+
+fn parse_block(parser: &mut Parser) {
+    parser.begin_node(SyntaxKind::Block);
+    parser.expect(t!['{'], &[]);
+    parser.ws0();
+    parser.expect(t!['}'], &[]);
+    parser.end_node();
 }
 
 #[cfg(test)]
@@ -343,6 +518,25 @@ mod tests {
             "struct Foo { foo: Bar, bar: Foo }",
             "struct Foo { foo: bar::Baz, bar: Foo }",
             "struct Foo { foo: bar::Baz, bar: foo::foo::Foo }",
+        ];
+
+        for input in inputs {
+            let token = lexer::tokenize(input);
+            let result = parse(&token, input);
+            assert_eq!(result.diagnostics.len(), 0);
+        }
+    }
+
+    #[test]
+    fn test_fn_declaration() {
+        let inputs = [
+            "fn foo() {}",
+            "fn foo(bar: Bar) {}",
+            "fn foo(bar: bar::Bar) {}",
+            "fn foo(bar: bar::foo::Bar, foo: foo::bar::Foo) {}",
+            "fn foo() -> Foo {}",
+            "fn foo() -> foo::Foo {}",
+            "fn foo(a: A, b: B, c: C) -> foo::Foo {}",
         ];
 
         for input in inputs {

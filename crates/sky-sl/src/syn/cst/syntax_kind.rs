@@ -45,6 +45,9 @@ pub enum SyntaxKind {
     /// A path e.g. `foo::bar`
     Path,
 
+    /// A path segment e.g. `foo`
+    PathSegment,
+
     /// Block
     Block,
 
