@@ -542,11 +542,7 @@ mod tests {
         for input in inputs {
             let token = lexer::tokenize(input);
             let result = parse(&token, input);
-            dbg!(&result.diagnostics);
-            dbg!(result.tree());
             assert_eq!(result.diagnostics.len(), 0);
         }
-
-        panic!();
     }
 }
