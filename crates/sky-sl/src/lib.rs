@@ -1,6 +1,5 @@
 mod fs;
 mod package;
-mod foo;
 
 pub mod hir;
 pub mod lexer;

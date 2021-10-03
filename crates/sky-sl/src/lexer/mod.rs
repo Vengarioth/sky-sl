@@ -110,11 +110,6 @@ impl Cursor<'_> {
         self.bump_while(is_identifier_continue);
         SyntaxKind::from_keyword(self.current_text()).unwrap_or(SyntaxKind::Identifier)
     }
-
-    fn num_literal(&mut self) -> SyntaxKind {
-        self.bump_while(is_num_literal_continue);
-        SyntaxKind::NumLiteral
-    }
 }
 
 #[cfg(test)]

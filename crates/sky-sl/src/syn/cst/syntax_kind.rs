@@ -1,7 +1,6 @@
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
 #[repr(u16)]
 pub enum SyntaxKind {
-
     /// A module
     Module,
 
@@ -72,14 +71,23 @@ pub enum SyntaxKind {
     /// A binary expression with two operands
     BinaryExpression,
 
+    // A unary expression with only one operand
+    UnaryExpression,
+
     /// A postfix call expression e.g. `a()` or `a.b()`
     CallExpression,
 
     /// A list of expressions used in a call e.g. `(1.0, 2.0)`
     CallArgumentList,
 
+    /// A single call argument expression
+    CallArgument,
+
     /// A postfix index expression e.g. `a[0]`
     IndexExpression,
+
+    /// An expression that represents the value to index with, e.g. the `0` in `a[0]`
+    Indexer,
 
     /// A struct expression e.g. `MyStruct { a: a, b: b }`
     StructExpression,
@@ -114,6 +122,27 @@ pub enum SyntaxKind {
     /// any non-keyword identifier
     Identifier,
 
+    /// the "true" keyword
+    TrueKeyword,
+
+    /// the "false" keyword
+    FalseKeyword,
+
+    /// The "if" keyword
+    IfKeyword,
+
+    /// The "else" keyword
+    ElseKeyword,
+
+    /// The "loop" keyword
+    LoopKeyword,
+
+    /// The "while" keyword
+    WhileKeyword,
+
+    /// The "for" keyword
+    ForKeyword,
+
     /// any type-identifier (TODO remove when we have paths)
     TypeIdentifier,
 
@@ -123,8 +152,17 @@ pub enum SyntaxKind {
     /// any comment
     Comment,
 
+    /// A boolean literal: `true` or `false`
+    BoolLiteral,
+
     /// A numeric literal (TODO: split into different typed and untyped literals, e.g. 1f16, 0.0 or 42)
     NumLiteral,
+
+    /// an integer literal, e.g. `42`
+    IntLiteral,
+
+    /// a floating point literal, e.g. `3.141592`
+    FloatLiteral,
 
     /// ";"
     Semicolon,
@@ -219,7 +257,8 @@ impl SyntaxKind {
         use self::SyntaxKind::*;
 
         match self {
-            StructKeyword | FnKeyword | UseKeyword | ModKeyword | LetKeyword => true,
+            StructKeyword | FnKeyword | UseKeyword | ModKeyword | LetKeyword | TrueKeyword
+            | FalseKeyword | IfKeyword | ElseKeyword | LoopKeyword | WhileKeyword | ForKeyword => true,
             _ => false,
         }
     }
@@ -292,6 +331,13 @@ impl SyntaxKind {
             "use" => Some(UseKeyword),
             "mod" => Some(ModKeyword),
             "package" => Some(PackageKeyword),
+            "true" => Some(TrueKeyword),
+            "false" => Some(FalseKeyword),
+            "if" => Some(IfKeyword),
+            "else" => Some(ElseKeyword),
+            "loop" => Some(LoopKeyword),
+            "while" => Some(WhileKeyword),
+            "for" => Some(ForKeyword),
             _ => None,
         }
     }
@@ -313,13 +359,13 @@ pub enum Operator {
 
     /// Arithmetic Subtract operator
     Subtract,
-    
+
     /// Arithmetic Multiply operator
     Multiply,
-    
+
     /// Arithmetic Divide operator
     Divide,
-    
+
     /// Remainder (modulo) operator
     Remainder,
 
@@ -331,7 +377,6 @@ pub enum Operator {
 
     /// Logical XOR operator
     XOr,
-
     // TODO left shift
     // TODO right shift
 }
@@ -370,7 +415,6 @@ impl Operator {
             Operator::And => Associativity::Left,
             Operator::Or => Associativity::Left,
             Operator::XOr => Associativity::Left,
-
         }
     }
 }
