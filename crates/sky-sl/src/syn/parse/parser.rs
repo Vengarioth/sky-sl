@@ -235,7 +235,7 @@ impl<'a> Parser<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct ParseResult {
     pub root: GreenNode,
     pub diagnostics: Vec<ParseDiagnostic>,
@@ -244,6 +244,10 @@ pub struct ParseResult {
 impl ParseResult {
     pub fn new(root: GreenNode, diagnostics: Vec<ParseDiagnostic>) -> Self {
         Self { root, diagnostics }
+    }
+
+    pub fn diagnostics(&self) -> &[ParseDiagnostic] {
+        &self.diagnostics
     }
 
     pub fn tree(&self) -> Root {

@@ -5,6 +5,7 @@ mod parser;
 
 pub use diagnostic::*;
 use parser::*;
+pub use parser::ParseResult;
 
 use super::cst::{BinaryOperator, Checkpoint, SyntaxKind};
 

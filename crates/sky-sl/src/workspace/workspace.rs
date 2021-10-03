@@ -1,12 +1,11 @@
 use super::{db::CompilerDatabase, CompileError};
 use crate::fs::{initialize_fs, insert_file, lookup_file, remove_file, FileId, FileSystemError};
 use crate::package::{Package, PackageDatabase};
-use crate::syn::ast::Root;
 use crate::syn::cst::LineIndex;
 use crate::syn::db::SyntaxDatabase;
-use crate::syn::Parse;
 use crate::hir;
 use crate::hir::*;
+use crate::syn::parse::ParseResult;
 use camino::{Utf8Path, Utf8PathBuf};
 use std::sync::Arc;
 
@@ -42,7 +41,7 @@ impl Workspace {
         self.db.find_packages()
     }
 
-    pub fn get_ast(&mut self, path: &Utf8Path) -> Result<Parse<Root>, CompileError> {
+    pub fn get_ast(&mut self, path: &Utf8Path) -> Result<ParseResult, CompileError> {
         let path = path.strip_prefix(&self.root_path).unwrap();
         let file_id = lookup_file(&self.db, path).ok_or_else(|| {
             CompileError::FileSystemError(FileSystemError::FileDoesNotExist(path.to_owned()))

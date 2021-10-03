@@ -1,7 +1,7 @@
 use crate::syn::cst::SyntaxKind;
 use rowan::TextSize;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ParseDiagnostic {
     SkippedToken {
         location: TextSize,
