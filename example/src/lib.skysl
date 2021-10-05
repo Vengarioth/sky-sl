@@ -9,10 +9,17 @@ fn bar() {
     let x = 1.0;
     let y = x * x;
     let z = x * y;
+    let bla = 1;
+    let a = true;
+    let b = false;
+
+    a + b * c ** d;
+
+    let c = true;
 }
 
 
-fn baz(x: f32) -> f32 {
+fn baz(x: f32, y: foo::bar::Baz) -> f32 {
 
 }
 

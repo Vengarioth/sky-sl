@@ -1,4 +1,4 @@
-use super::{AstChildren, AstNode, IdentifierOwner, MemberListOwner};
+use super::{AstChildren, AstNode, MemberListOwner, NameOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -27,5 +27,5 @@ pub trait StructDefinitionOwner: AstNode {
     }
 }
 
-impl IdentifierOwner for StructDefinition {}
+impl NameOwner for StructDefinition {}
 impl MemberListOwner for StructDefinition {}

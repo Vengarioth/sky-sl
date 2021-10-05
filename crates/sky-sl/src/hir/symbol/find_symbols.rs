@@ -29,10 +29,10 @@ fn visit_module_declaration(
     module_declaration: ModuleDeclaration,
     symbols: &mut Vec<Symbol>,
 ) {
-    if let Some(module_identifier) = module_declaration.identifier() {
-        let name = module_identifier.syntax.to_string();
+    if let Some(name_syntax) = module_declaration.name() {
+        let name = name_syntax.syntax.to_string();
         let span = module_declaration.syntax.text_range();
-        let selection_span = module_identifier.syntax.text_range();
+        let selection_span = name_syntax.syntax.text_range();
 
         symbols.push(Symbol::new(
             name,
@@ -50,11 +50,11 @@ fn visit_function_definition(
     function_definition: FunctionDefinition,
     symbols: &mut Vec<Symbol>,
 ) {
-    if let Some(function_identifier) = function_definition.signature().and_then(|s| s.identifier())
+    if let Some(function_name) = function_definition.signature().and_then(|s| s.name())
     {
-        let name = function_identifier.syntax.to_string();
+        let name = function_name.syntax.to_string();
         let span = function_definition.syntax.text_range();
-        let selection_span = function_identifier.syntax.text_range();
+        let selection_span = function_name.syntax.text_range();
         symbols.push(Symbol::new(
             name,
             file_id,
@@ -71,10 +71,10 @@ fn visit_struct_definition(
     struct_definition: StructDefinition,
     symbols: &mut Vec<Symbol>,
 ) {
-    if let Some(struct_identifier) = struct_definition.identifier() {
-        let name = struct_identifier.syntax.to_string();
+    if let Some(struct_name) = struct_definition.name() {
+        let name = struct_name.syntax.to_string();
         let span = struct_definition.syntax.text_range();
-        let selection_span = struct_identifier.syntax.text_range();
+        let selection_span = struct_name.syntax.text_range();
 
         let mut children = Vec::new();
 
@@ -96,10 +96,10 @@ fn visit_struct_definition(
 }
 
 fn visit_struct_member(file_id: FileId, member: Member, symbols: &mut Vec<Symbol>) {
-    if let Some(identifier) = member.identifier() {
-        let name = identifier.syntax.to_string();
+    if let Some(member_name) = member.name() {
+        let name = member_name.syntax.to_string();
         let span = member.syntax().text_range();
-        let selection_span = identifier.syntax.text_range();
+        let selection_span = member_name.syntax.text_range();
         symbols.push(Symbol::new(
             name,
             file_id,

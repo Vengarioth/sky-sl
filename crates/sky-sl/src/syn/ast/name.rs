@@ -1,18 +1,20 @@
-use crate::syn::cst::*;
-use super::{AstNode, PathOwner};
+use super::{AstNode, IdentifierOwner};
+use crate::syn::cst::{SyntaxKind, SyntaxNode};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct ReturnType {
+pub struct Name {
     pub(crate) syntax: SyntaxNode,
 }
 
-impl AstNode for ReturnType {
+impl AstNode for Name {
     fn can_cast_from(kind: SyntaxKind) -> bool {
-        kind == SyntaxKind::ReturnType
+        kind == SyntaxKind::Name
     }
 
     fn cast_from(syntax: SyntaxNode) -> Option<Self>
-        where Self: Sized {
+    where
+        Self: Sized,
+    {
         Self::can_cast_from(syntax.kind()).then(|| Self { syntax })
     }
 
@@ -21,10 +23,10 @@ impl AstNode for ReturnType {
     }
 }
 
-pub trait ReturnTypeOwner: AstNode {
-    fn return_type(&self) -> Option<ReturnType> {
+pub trait NameOwner: AstNode {
+    fn name(&self) -> Option<Name> {
         super::child(self)
     }
 }
 
-impl PathOwner for ReturnType {}
+impl IdentifierOwner for Name {}

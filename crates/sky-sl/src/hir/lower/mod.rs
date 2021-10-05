@@ -11,12 +11,12 @@ pub fn lower_ast_to_hir(file: FileId, db: &dyn HirDatabase, ast: &Root) -> untyp
     let mut items = Vec::new();
     let mut errors = Vec::new();
 
-    for module in ast.modules() {
-        if let Some(x) = module.identifier() {
+    for module in ast.module_declarations() {
+        if let Some(x) = module.name() {
             let module_file_name = format!("{}.skysl", x.syntax());
 
             let parent = db.directory(file);
-            let module_file = db.child_file(parent, module_file_name);
+            let _module_file = db.child_file(parent, module_file_name);
         }
     }
 
@@ -45,23 +45,23 @@ fn lower_function_definition(function_definition: FunctionDefinition) -> Result<
 }
 
 fn lower_function_signature(function_signature: FunctionSignature) -> Result<untyped::FunctionSignature, LowerToHirError> {
-    let name = function_signature.identifier().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
+    let name = function_signature.name().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
     let mut arguments = Vec::new();
 
     let argument_list = function_signature.argument_list().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
     for argument in argument_list.arguments() {
-        let name = argument.identifier().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
-        let ty_name = argument.type_identifier().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
+        let name = argument.name().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
+        let ty_path = argument.path().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
         arguments.push(untyped::FunctionArgument::new(
             name.syntax().to_string(),
-            ty_name.syntax().to_string(),
+            ty_path.syntax().to_string(),
             argument.syntax().text_range(), 
         ));
     }
 
     let return_type = if let Some(return_type) = function_signature.return_type() {
-        let type_identifier = return_type.type_identifier().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
-        Some(type_identifier.syntax().to_string())
+        let type_path = return_type.path().ok_or_else(|| LowerToHirError::IncompleteFunctionSignature)?;
+        Some(type_path.syntax().to_string())
     } else {
         None
     };
@@ -202,18 +202,18 @@ fn visit_struct_definition(struct_definition: StructDefinition, items: &mut Vec<
 }
 
 fn lower_struct_definition(struct_definition: StructDefinition) -> Result<untyped::StructKind, LowerToHirError> {
-    let name = struct_definition.identifier().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
+    let name = struct_definition.name().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
 
     let mut members = Vec::new();
 
     let member_list = struct_definition.member_list().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
     for member in member_list.member() {
-        let name = member.identifier().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
-        let ty_name = member.type_identifier().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
+        let name = member.name().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
+        let ty_path = member.path().ok_or_else(|| LowerToHirError::IncompleteStructDeclaration)?;
 
         members.push(untyped::StructMember::new(
             name.syntax().to_string(),
-            ty_name.syntax().to_string(),
+            ty_path.syntax().to_string(),
             member.syntax().text_range(), 
         ));
     }

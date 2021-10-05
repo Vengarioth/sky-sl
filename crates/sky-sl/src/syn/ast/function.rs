@@ -1,4 +1,4 @@
-use super::{AstChildren, AstNode, IdentifierOwner, ArgumentListOwner, ReturnTypeOwner, BlockDefinitionOwner};
+use super::{ArgumentListOwner, AstChildren, AstNode, BlockDefinitionOwner, NameOwner, ReturnTypeOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -56,6 +56,6 @@ pub trait FunctionSignatureOwner: AstNode {
     }
 }
 
-impl IdentifierOwner for FunctionSignature {}
+impl NameOwner for FunctionSignature {}
 impl ArgumentListOwner for FunctionSignature {}
 impl ReturnTypeOwner for FunctionSignature {}

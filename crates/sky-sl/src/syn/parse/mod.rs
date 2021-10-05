@@ -81,7 +81,9 @@ fn parse_module_declaration(parser: &mut Parser) {
         parser.consume(t![mod]);
         parser.ws1();
 
+        parser.begin_node(SyntaxKind::Name);
         parser.expect(t![ident], &[t![;], t![mod], t![use], t![fn], t![struct]]);
+        parser.end_node();
 
         parser.ws0();
 
@@ -412,6 +414,7 @@ fn parse_function_declaration(parser: &mut Parser) {
             ],
         );
         parser.ws0();
+
         parse_item_path(parser);
         parser.end_node();
         parser.ws0();

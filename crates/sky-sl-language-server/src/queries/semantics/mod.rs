@@ -64,8 +64,8 @@ fn visit_function_definition(function_definition: FunctionDefinition, builder: &
             builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
         }
     
-        if let Some(identifier) = signature.identifier() {
-            let syntax = identifier.syntax();
+        if let Some(name) = signature.name() {
+            let syntax = name.syntax();
             builder.build_token(syntax.text_range(), *TokenIndex::FUNCTION, *ModifierIndex::DECLARATION);
         }
     
@@ -74,8 +74,8 @@ fn visit_function_definition(function_definition: FunctionDefinition, builder: &
         }
     
         if let Some(return_type) = signature.return_type() {
-            if let Some(type_identifier) = return_type.type_identifier() {
-                builder.build_token(type_identifier.syntax().text_range(), *TokenIndex::TYPE, *ModifierIndex::NONE);
+            if let Some(type_path) = return_type.path() {
+                visit_type_path(type_path, builder);
             }
         }
     }
@@ -87,12 +87,12 @@ fn visit_function_definition(function_definition: FunctionDefinition, builder: &
 
 fn visit_argument_list(argument_list: ArgumentList, builder: &mut SemanticTokensBuilder) {
     for argument in argument_list.arguments() {
-        if let Some(identifier) = argument.identifier() {
-            builder.build_token(identifier.syntax().text_range(), *TokenIndex::PARAMETER, *ModifierIndex::DECLARATION);
+        if let Some(name) = argument.name() {
+            builder.build_token(name.syntax().text_range(), *TokenIndex::PARAMETER, *ModifierIndex::DECLARATION);
         }
 
-        if let Some(type_identifier) = argument.type_identifier() {
-            builder.build_token(type_identifier.syntax().text_range(), *TokenIndex::TYPE, *ModifierIndex::NONE);
+        if let Some(type_path) = argument.path() {
+            visit_type_path(type_path, builder);
         }
     }
 }
@@ -102,8 +102,8 @@ fn visit_struct_definition(struct_definition: StructDefinition, builder: &mut Se
         builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
     }
 
-    if let Some(identifier) = struct_definition.identifier() {
-        let syntax = identifier.syntax();
+    if let Some(name) = struct_definition.name() {
+        let syntax = name.syntax();
         builder.build_token(syntax.text_range(), *TokenIndex::STRUCT, *ModifierIndex::NONE);
     }
 
@@ -115,13 +115,13 @@ fn visit_struct_definition(struct_definition: StructDefinition, builder: &mut Se
 }
 
 fn visit_struct_member(member: Member, builder: &mut SemanticTokensBuilder) {
-    if let Some(identifier) = member.identifier() {
-        let syntax = identifier.syntax();
+    if let Some(name) = member.name() {
+        let syntax = name.syntax();
         builder.build_token(syntax.text_range(), *TokenIndex::PROPERTY, *ModifierIndex::NONE);
     }
 
-    if let Some(type_identifier) = member.type_identifier() {
-        builder.build_token(type_identifier.syntax().text_range(), *TokenIndex::TYPE, *ModifierIndex::NONE);
+    if let Some(type_path) = member.path() {
+        visit_type_path(type_path, builder);
     }
 }
 
@@ -232,5 +232,21 @@ fn visit_struct_expression(struct_expression: StructExpression, builder: &mut Se
                 visit_expression(expression, builder);
             }
         }
+    }
+}
+
+fn visit_type_path(type_path: Path, builder: &mut SemanticTokensBuilder) {
+    if let Some(segment) = type_path.segment() {
+        visit_path_segment(segment, builder);
+    }
+}
+
+fn visit_path_segment(segment: PathSegment, builder: &mut SemanticTokensBuilder) {
+    if let Some(name) = segment.name() {
+        builder.build_token(name.syntax().text_range(), *TokenIndex::TYPE, *ModifierIndex::NONE);
+    }
+
+    if let Some(next) = segment.segment() {
+        visit_path_segment(next, builder);
     }
 }

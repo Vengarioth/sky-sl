@@ -9,7 +9,7 @@ pub struct ModuleItem {
 impl AstNode for ModuleItem {
     fn can_cast_from(kind: SyntaxKind) -> bool {
         match kind {
-            SyntaxKind::Fn | SyntaxKind::Struct | SyntaxKind::Module | SyntaxKind::UseDeclaration => true,
+            SyntaxKind::Fn | SyntaxKind::Struct | SyntaxKind::ModuleDeclaration | SyntaxKind::UseDeclaration => true,
             _ => false,
         }
     }
@@ -28,7 +28,7 @@ impl ModuleItem {
         match self.syntax.kind() {
             SyntaxKind::Fn => ModuleItemKind::FunctionDefinition(FunctionDefinition::cast_from(self.syntax.clone()).unwrap()),
             SyntaxKind::Struct => ModuleItemKind::StructDefinition(StructDefinition::cast_from(self.syntax.clone()).unwrap()),
-            SyntaxKind::Module => ModuleItemKind::ModuleDeclaration(ModuleDeclaration::cast_from(self.syntax.clone()).unwrap()),
+            SyntaxKind::ModuleDeclaration => ModuleItemKind::ModuleDeclaration(ModuleDeclaration::cast_from(self.syntax.clone()).unwrap()),
             SyntaxKind::UseDeclaration => ModuleItemKind::UseDeclaration(UseDeclaration::cast_from(self.syntax.clone()).unwrap()),
             _ => unreachable!(),
         }
