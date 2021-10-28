@@ -1,5 +1,7 @@
 use rowan::TextRange;
 
+use crate::intern::Name;
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ExpressionKind {
     LiteralExpression(LiteralExpression),
@@ -84,12 +86,12 @@ impl IndexExpression {
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct PathExpression {
-    pub path: String,
+    pub path: Name,
     pub span: TextRange,
 }
 
 impl PathExpression {
-    pub fn new(path: String, span: TextRange) -> Self {
+    pub fn new(path: Name, span: TextRange) -> Self {
         Self { path, span }
     }
 }

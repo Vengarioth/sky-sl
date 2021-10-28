@@ -15,9 +15,18 @@ pub enum LowerToHirError {
     #[error("Incomplete struct declaration")]
     IncompleteStructDeclaration,
 
+    #[error("Incomplete layout declaration")]
+    IncompleteLayoutDeclaration,
+
     #[error("Incomplete statement")]
     IncompleteStatement,
 
     #[error("Incomplete expression")]
     IncompleteExpression,
+
+    #[error("Incomplete use declaration")]
+    IncompleteUseDeclaration,
+
+    #[error("Incomplete path")]
+    IncompletePath,
 }

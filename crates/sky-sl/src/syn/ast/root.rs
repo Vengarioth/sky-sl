@@ -1,4 +1,4 @@
-use super::{AstNode, FunctionDefinitionOwner, ModuleDeclarationOwner, ModuleItemOwner, StructDefinitionOwner, UseDeclarationOwner};
+use super::{AstNode, FunctionDefinitionOwner, LayoutDefinitionOwner, ModuleDeclarationOwner, ModuleItemOwner, StructDefinitionOwner, UseDeclarationOwner};
 use crate::syn::cst::{SyntaxNode, SyntaxKind};
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -26,3 +26,4 @@ impl FunctionDefinitionOwner for Root {}
 impl StructDefinitionOwner for Root {}
 impl ModuleDeclarationOwner for Root {}
 impl UseDeclarationOwner for Root {}
+impl LayoutDefinitionOwner for Root {}

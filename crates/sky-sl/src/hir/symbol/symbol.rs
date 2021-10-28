@@ -1,34 +1,34 @@
 use rowan::TextRange;
 
-use crate::fs::FileId;
+use crate::{fs::FileId, intern::Name};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SymbolKind {
     Module,
     Function,
     Struct,
-    Field,
     Value,
+    Layout,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Symbol {
-    pub name: String,
+    pub name: Name,
     pub file: FileId,
     pub span: TextRange,
     pub selection_span: TextRange,
     pub kind: SymbolKind,
-    pub children: Option<Vec<Symbol>>,
+    pub member: Vec<SymbolMember>,
 }
 
 impl Symbol {
     pub fn new(
-        name: String,
+        name: Name,
         file: FileId,
         span: TextRange,
         selection_span: TextRange,
         kind: SymbolKind,
-        children: Option<Vec<Symbol>>,
+        member: Vec<SymbolMember>,
     ) -> Self {
         Self {
             name,
@@ -36,23 +36,36 @@ impl Symbol {
             span,
             selection_span,
             kind,
-            children,
+            member,
         }
     }
+}
 
-    pub fn reference(&self) -> SymbolReference {
-        SymbolReference::new(self.name.to_owned(), self.file)
+#[derive(Debug, Eq, PartialEq)]
+pub struct SymbolMember {
+    pub name: Name,
+    pub span: TextRange,
+    pub selection_span: TextRange,
+    pub kind: SymbolMemberKind,
+}
+
+impl SymbolMember {
+    pub fn new(
+        name: Name,
+        span: TextRange,
+        selection_span: TextRange,
+        kind: SymbolMemberKind,
+    ) -> Self {
+        Self {
+            name,
+            span,
+            selection_span,
+            kind,
+        }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct SymbolReference {
-    pub name: String,
-    pub file: FileId,
-}
-
-impl SymbolReference {
-    pub fn new(name: String, file: FileId) -> Self {
-        Self { name, file }
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SymbolMemberKind {
+    Field,
 }

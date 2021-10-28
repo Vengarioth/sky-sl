@@ -1,12 +1,13 @@
-use crate::hir::{typed, untyped};
+use crate::{hir::{typed, untyped}, intern::Name};
 use std::collections::HashMap;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Ty(u32);
 
+/* TODO
 #[derive(Debug)]
 struct Scope {
-    entries: HashMap<String, Ty>,
+    entries: HashMap<Name, Ty>,
 }
 
 impl Scope {
@@ -16,19 +17,19 @@ impl Scope {
         }
     }
 
-    pub fn insert(&mut self, name: &str, ty: Ty) {
-        self.entries.insert(name.to_string(), ty);
+    pub fn insert(&mut self, name: Name, ty: Ty) {
+        self.entries.insert(name, ty);
     }
 
-    pub fn lookup(&self, name: &str) -> Option<Ty> {
-        self.entries.get(name).cloned()
+    pub fn lookup(&self, name: Name) -> Option<Ty> {
+        self.entries.get(&name).cloned()
     }
 }
 
 #[derive(Debug)]
 pub struct Env {
     scopes: Vec<Scope>,
-    ty: HashMap<String, Ty>,
+    ty: HashMap<Name, Ty>,
     ty_i: u32,
 }
 
@@ -41,13 +42,13 @@ impl Env {
         }
     }
 
-    pub fn intern_ty(&mut self, ty_name: &str) -> Ty {
-        if let Some(ty) = self.ty.get(ty_name) {
+    pub fn intern_ty(&mut self, ty_name: Name) -> Ty {
+        if let Some(ty) = self.ty.get(&ty_name) {
             *ty
         } else {
             let ty = Ty(self.ty_i);
             self.ty_i += 1;
-            self.ty.insert(ty_name.to_string(), ty);
+            self.ty.insert(ty_name, ty);
             ty
         }
     }
@@ -60,11 +61,11 @@ impl Env {
         self.scopes.pop();
     }
 
-    pub fn insert(&mut self, name: &str, ty: Ty) {
+    pub fn insert(&mut self, name: Name, ty: Ty) {
         self.scopes.last_mut().unwrap().insert(name, ty);
     }
 
-    pub fn lookup(&self, name: &str) -> Option<Ty> {
+    pub fn lookup(&self, name: Name) -> Option<Ty> {
         for scope in self.scopes.iter().rev() {
             if let Some(ty) = scope.lookup(name) {
                 return Some(ty);
@@ -95,13 +96,13 @@ pub fn infer_module(module: &untyped::Module, env: &mut Env) -> typed::Module {
 }
 
 pub fn infer_function(function: &untyped::FunctionKind, env: &mut Env) -> typed::FunctionKind {
-    let ty = env.intern_ty(&function.signature.name);
+    let ty = env.intern_ty(function.signature.name);
     
     let mut arguments = Vec::new();
     // add arguments to env
     for argument in &function.signature.arguments {
-        let ty = env.intern_ty(&argument.ty_name);
-        env.insert(&argument.name, ty);
+        let ty = env.intern_ty(argument.ty_name);
+        env.insert(argument.name, ty);
         arguments.push(typed::FunctionArgument::new(
             argument.name.to_string(),
             ty,
@@ -116,7 +117,7 @@ pub fn infer_function(function: &untyped::FunctionKind, env: &mut Env) -> typed:
     };
 
     let signature = typed::FunctionSignature::new(
-        function.signature.name.to_string(),
+        function.signature.name,
         arguments,
         return_type,
         function.signature.span,
@@ -149,10 +150,10 @@ pub fn infer_statement(statement: &untyped::StatementKind, env: &mut Env) -> typ
             env.pop_scope();
 
             // add local variable to the env
-            env.insert(&let_statement.name, ty);
+            env.insert(let_statement.name, ty);
 
             typed::StatementKind::Let(typed::LetStatement::new(
-                let_statement.name.to_string(),
+                let_statement.name,
                 expr,
                 ty,
                 let_statement.span,
@@ -225,9 +226,9 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
         },
         untyped::ExpressionKind::PathExpression(path_expression) => {
             // variables
-            if let Some(ty) = env.lookup(&path_expression.path) {
+            if let Some(ty) = env.lookup(path_expression.path) {
                 typed::ExpressionKind::PathExpression(typed::PathExpression::new(
-                    path_expression.path.to_string(),
+                    path_expression.path,
                     ty,
                     path_expression.span
                 ))
@@ -242,3 +243,4 @@ pub fn infer_expression(expression: &untyped::ExpressionKind, env: &mut Env) -> 
         },
     }
 }
+*/

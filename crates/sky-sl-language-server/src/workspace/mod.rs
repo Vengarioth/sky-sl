@@ -65,10 +65,10 @@ impl VSCodeWorkspaces {
             .find(|workspace| path.starts_with(workspace.root()))
             .map(|workspace| {
                 workspace.synchronize();
-                let symbols = workspace.workspace.get_symbols(&path).unwrap();
+                let hir = workspace.workspace.get_hir(&path).unwrap();
                 let line_index = workspace.workspace.get_line_index(&path).unwrap();
-                crate::queries::hover(symbols, position, line_index)
-            })
+                crate::queries::hover(hir, position, line_index, &workspace.workspace)
+            }).flatten()
     }
 
     pub fn document_symbols(&mut self, path: Utf8PathBuf) -> Option<DocumentSymbolResponse> {
@@ -79,7 +79,7 @@ impl VSCodeWorkspaces {
                 workspace.synchronize();
                 let symbols = workspace.workspace.get_symbols(&path).unwrap();
                 let line_index = workspace.workspace.get_line_index(&path).unwrap();
-                crate::queries::document_symbols2(symbols, line_index)
+                crate::queries::document_symbols2(&workspace.workspace, symbols, line_index)
             })
     }
 

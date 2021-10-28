@@ -1,5 +1,6 @@
 use super::{db::CompilerDatabase, CompileError};
 use crate::fs::{initialize_fs, insert_file, lookup_file, remove_file, FileId, FileSystemError};
+use crate::intern::{InternDatabase, Name};
 use crate::package::{Package, PackageDatabase};
 use crate::syn::cst::LineIndex;
 use crate::syn::db::SyntaxDatabase;
@@ -86,5 +87,21 @@ impl Workspace {
         })?;
         let typed_hir = self.db.get_typed_hir(file_id);
         Ok(typed_hir)
+    }
+
+    pub fn get_item_at(&mut self, path: &Utf8Path, _line: u32, _character: u32) -> Result<(), CompileError> {
+        let path = path.strip_prefix(&self.root_path).unwrap();
+
+        let file_id = lookup_file(&self.db, path).ok_or_else(|| {
+            CompileError::FileSystemError(FileSystemError::FileDoesNotExist(path.to_owned()))
+        })?;
+
+        let _hir = self.db.get_hir(file_id);
+
+        Ok(())
+    }
+
+    pub fn interned_name(&self, name: Name) -> String {
+        self.db.lookup_intern_name(name)
     }
 }

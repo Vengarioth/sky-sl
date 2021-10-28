@@ -1,18 +1,18 @@
+use super::ItemPath;
 use crate::{hir::named::NamedItemKind, intern::Name, text::Locate};
 use rowan::TextRange;
 
-use super::ItemPath;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct StructKind {
+pub struct LayoutKind {
     pub name: Name,
     pub item: NamedItemKind,
-    pub members: Vec<StructMember>,
+    pub members: Vec<LayoutMember>,
     pub span: TextRange,
 }
 
-impl StructKind {
-    pub fn new(name: Name, item: NamedItemKind, members: Vec<StructMember>, span: TextRange) -> Self {
+impl LayoutKind {
+    pub fn new(name: Name, item: NamedItemKind, members: Vec<LayoutMember>, span: TextRange) -> Self {
         Self {
             name,
             item,
@@ -22,7 +22,7 @@ impl StructKind {
     }
 }
 
-impl Locate for StructKind {
+impl Locate for LayoutKind {
     type Item = NamedItemKind;
 
     fn locate(&self, offset: rowan::TextSize) -> Option<Self::Item> {
@@ -35,17 +35,17 @@ impl Locate for StructKind {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-pub struct StructMember {
+pub struct LayoutMember {
     pub name: Name,
-    pub item_path: ItemPath,
+    pub type_path: ItemPath,
     pub span: TextRange,
 }
 
-impl StructMember {
-    pub fn new(name: Name, item_path: ItemPath, span: TextRange) -> Self {
+impl LayoutMember {
+    pub fn new(name: Name, type_path: ItemPath, span: TextRange) -> Self {
         Self {
             name,
-            item_path,
+            type_path,
             span,
         }
     }

@@ -1,3 +1,4 @@
+use crate::intern::*;
 use crate::fs::db::*;
 use crate::package::*;
 use crate::syn::db::*;
@@ -5,6 +6,7 @@ use crate::hir::*;
 use std::fmt;
 
 #[salsa::database(
+    InternDatabaseStorage,
     FileDatabaseStorage,
     PackageDatabaseStorage,
     SyntaxDatabaseStorage,

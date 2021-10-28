@@ -207,12 +207,6 @@ impl<'a> Parser<'a> {
         self.builder.start_node_at(checkpoint, kind.into());
     }
 
-    pub fn node_at(&mut self, checkpoint: Checkpoint, kind: SyntaxKind, f: impl Fn(&mut Self)) {
-        self.begin_node_at(checkpoint, kind);
-        f(self);
-        self.end_node();
-    }
-
     pub fn node(&mut self, kind: SyntaxKind, f: impl Fn(&mut Self)) {
         self.begin_node(kind);
         f(self);
@@ -228,10 +222,6 @@ impl<'a> Parser<'a> {
         let diagnostics = self.diagnostics;
 
         ParseResult::new(root, diagnostics)
-    }
-
-    pub fn remaining(&self) -> Vec<SyntaxKind> {
-        self.token.iter().map(|t| t.kind()).collect()
     }
 }
 

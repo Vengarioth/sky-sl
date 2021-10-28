@@ -1,3 +1,4 @@
+mod builder;
 mod find_symbols;
 mod symbol_list;
 mod symbol;

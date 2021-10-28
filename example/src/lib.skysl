@@ -1,9 +1,15 @@
 mod test;
 mod foo;
 
-use foo;
+use foo::Bar;
 
-fn foo() { let a = 1.0 + 2.0; let b = 3.0; let c = a + b; }
+fn f() { let a = 1.0 + 2.0; let b = 3.0; let c = a + b; }
+
+fn foo_bar_baz() {
+    let x = 1.0;
+    let y = x**x;
+
+}
 
 fn bar() {
     let x = 1.0;
@@ -18,11 +24,18 @@ fn bar() {
     let c = true;
 }
 
-
 fn baz(x: f32, y: foo::bar::Baz) -> f32 {
-
+    let x = 1;
+    let y = 2;
+    asdf
 }
 
 struct Bar {
-    foo_bar: BarFoo,
+    foo_bar: f32,
+    bar_foo: f64,
+}
+
+layout MyBindgroup {
+    binding(0) uniform bar1: Bar,
+    binding(1) uniform bar2: foo::Bar,
 }

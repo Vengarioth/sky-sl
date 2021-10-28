@@ -17,6 +17,21 @@ pub enum SyntaxKind {
 
     Name,
 
+    /// A layout
+    Layout,
+
+    /// A layout member list
+    LayoutMemberList,
+
+    /// A member of a LayoutMemberList
+    LayoutMember,
+
+    /// A binding index
+    BindingIndex,
+
+    /// A binding kind
+    BindingKind,
+
     /// A struct
     Struct,
 
@@ -143,6 +158,24 @@ pub enum SyntaxKind {
     /// The "for" keyword
     ForKeyword,
 
+    /// The "layout" keyword
+    LayoutKeyword,
+
+    /// the "binding" keyword
+    BindingKeyword,
+
+    /// the "uniform" keyword
+    UniformKeyword,
+
+    /// the "storage" keyword
+    StorageKeyword,
+
+    /// the "image" keyword
+    ImageKeyword,
+
+    /// the "sampler" keyword
+    SamplerKeyword,
+
     /// any type-identifier (TODO remove when we have paths)
     TypeIdentifier,
 
@@ -258,7 +291,8 @@ impl SyntaxKind {
 
         match self {
             StructKeyword | FnKeyword | UseKeyword | ModKeyword | LetKeyword | TrueKeyword
-            | FalseKeyword | IfKeyword | ElseKeyword | LoopKeyword | WhileKeyword | ForKeyword => true,
+            | FalseKeyword | IfKeyword | ElseKeyword | LoopKeyword | WhileKeyword | ForKeyword
+            | LayoutKeyword | BindingKeyword | UniformKeyword | StorageKeyword | ImageKeyword | SamplerKeyword => true,
             _ => false,
         }
     }
@@ -279,7 +313,7 @@ impl SyntaxKind {
         use self::SyntaxKind::*;
 
         match self {
-            NumLiteral => true,
+            NumLiteral | FloatLiteral | IntLiteral | BoolLiteral => true,
             _ => false,
         }
     }
@@ -338,6 +372,12 @@ impl SyntaxKind {
             "loop" => Some(LoopKeyword),
             "while" => Some(WhileKeyword),
             "for" => Some(ForKeyword),
+            "layout" => Some(LayoutKeyword),
+            "binding" => Some(BindingKeyword),
+            "uniform" => Some(UniformKeyword),
+            "storage" => Some(StorageKeyword),
+            "image" => Some(ImageKeyword),
+            "sampler" => Some(SamplerKeyword),
             _ => None,
         }
     }

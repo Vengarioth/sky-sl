@@ -1,9 +1,10 @@
 use super::{file::*, tree::*, FileSystemError};
+use crate::intern::{InternDatabase, Name};
 use camino::Utf8Path;
 use std::sync::Arc;
 
 #[salsa::query_group(FileDatabaseStorage)]
-pub trait FileDatabase: salsa::Database {
+pub trait FileDatabase: InternDatabase {
     #[salsa::interned]
     fn path_data(&self, data: PathSegmentData) -> PathSegment;
 
@@ -24,6 +25,7 @@ pub trait FileDatabase: salsa::Database {
     fn parent_directory(&self, path: PathSegment) -> Option<PathSegment>;
     fn child_directory(&self, path: PathSegment, name: String) -> Option<PathSegment>;
     fn child_file(&self, path: PathSegment, name: String) -> Option<FileId>;
+    fn child_module(&self, current_module: FileId, name: Name) -> Option<FileId>;
 }
 
 fn directory(db: &dyn FileDatabase, file: FileId) -> PathSegment {
@@ -33,7 +35,7 @@ fn directory(db: &dyn FileDatabase, file: FileId) -> PathSegment {
 fn parent_directory(db: &dyn FileDatabase, path: PathSegment) -> Option<PathSegment> {
     match db.lookup_path_data(path) {
         PathSegmentData::Root => None,
-        PathSegmentData::Directory { parent, .. } => Some(parent)
+        PathSegmentData::Directory { parent, .. } => Some(parent),
     }
 }
 
@@ -58,6 +60,24 @@ fn child_file(db: &dyn FileDatabase, path: PathSegment, name: String) -> Option<
     } else {
         None
     }
+}
+
+fn child_module(db: &dyn FileDatabase, current_module: FileId, name: Name) -> Option<FileId> {
+    let parent = db.directory(current_module);
+
+    let module_name = db.lookup_intern_name(name);
+
+    if let Some(file) = db.child_file(parent, format!("{}.skysl", db.lookup_intern_name(name))) {
+        return Some(file);
+    }
+
+    if let Some(directory) = db.child_directory(parent, module_name) {
+        if let Some(file) = db.child_file(directory, "mod.skysl".to_string()) {
+            return Some(file);
+        }
+    }
+
+    None
 }
 
 #[inline]

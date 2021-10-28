@@ -42,6 +42,9 @@ fn visit_root(root: Root, builder: &mut SemanticTokensBuilder) {
             ModuleItemKind::UseDeclaration(module_declaration) => {
                 visit_use_declaration(module_declaration, builder);
             },
+            ModuleItemKind::LayoutDefinition(layout_definition) => {
+                visit_layout_definition(layout_definition, builder);
+            },
         }
     }
 }
@@ -248,5 +251,42 @@ fn visit_path_segment(segment: PathSegment, builder: &mut SemanticTokensBuilder)
 
     if let Some(next) = segment.segment() {
         visit_path_segment(next, builder);
+    }
+}
+
+fn visit_layout_definition(layout_definition: LayoutDefinition, builder: &mut SemanticTokensBuilder) {
+    if let Some(keyword) = layout_definition.syntax().first_token() {
+        builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+    }
+
+    if let Some(name) = layout_definition.name() {
+        let syntax = name.syntax();
+        builder.build_token(syntax.text_range(), *TokenIndex::STRUCT, *ModifierIndex::NONE);
+    }
+
+    if let Some(member_list) = layout_definition.layout_member_list() {
+        for member in member_list.layout_member() {
+            visit_layout_member(member, builder);
+        }
+    }
+}
+
+fn visit_layout_member(layout_member: LayoutMember, builder: &mut SemanticTokensBuilder) {
+    if let Some(keyword) = layout_member.syntax().first_token() {
+        builder.build_token(keyword.text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+    }
+
+    if let Some(binding_index) = layout_member.binding_index() {
+        if let Some(expression) = binding_index.expression() {
+            visit_expression(expression, builder);
+        }
+    }
+
+    if let Some(binding_kind) = layout_member.binding_kind() {
+        builder.build_token(binding_kind.syntax().text_range(), *TokenIndex::KEYWORD, *ModifierIndex::NONE);
+    }
+
+    if let Some(type_path) = layout_member.path() {
+        visit_type_path(type_path, builder);
     }
 }

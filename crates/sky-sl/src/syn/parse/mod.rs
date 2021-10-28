@@ -49,6 +49,12 @@ macro_rules! t {
     [int] => {$crate::syn::cst::SyntaxKind::IntLiteral};
     [float] => {$crate::syn::cst::SyntaxKind::FloatLiteral};
     [bool] => {$crate::syn::cst::SyntaxKind::BoolLiteral};
+    [layout] => {$crate::syn::cst::SyntaxKind::LayoutKeyword};
+    [binding] => {$crate::syn::cst::SyntaxKind::BindingKeyword};
+    [uniform] => {$crate::syn::cst::SyntaxKind::UniformKeyword};
+    [storage] => {$crate::syn::cst::SyntaxKind::StorageKeyword};
+    [image] => {$crate::syn::cst::SyntaxKind::ImageKeyword};
+    [sampler] => {$crate::syn::cst::SyntaxKind::SamplerKeyword};
 }
 
 pub fn parse<'a>(token: &'a [Token], input: &'a str) -> ParseResult {
@@ -69,9 +75,120 @@ fn parse_module(parser: &mut Parser) {
                 SyntaxKind::UseKeyword => parse_use_declaration(parser),
                 SyntaxKind::StructKeyword => parse_struct_declaration(parser),
                 SyntaxKind::FnKeyword => parse_function_declaration(parser),
-                _ => unimplemented!(),
+                SyntaxKind::LayoutKeyword => parse_layout_declaration(parser),
+                _ => parser.skip(&[t![mod], t![use], t![fn], t![struct], t![layout]]),
             }
         }
+    });
+}
+
+fn parse_layout_declaration(parser: &mut Parser) {
+    parser.node(SyntaxKind::Layout, |parser| {
+        // parse layout keyword
+        parser.consume(t![layout]);
+        parser.ws0();
+
+        // parse the struct name
+        parser.begin_node(SyntaxKind::Name);
+        parser.expect(
+            t![ident],
+            &[t!['{'], t!['}'], t![mod], t![use], t![fn], t![struct], t![layout]],
+        );
+        parser.end_node();
+        parser.ws0();
+
+        // parse open brace
+        parser.expect(
+            SyntaxKind::OpenBrace,
+            &[SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct], t![layout]],
+        );
+        parser.ws0();
+
+        parse_layout_member_list(parser);
+
+        // parse close brace
+        parser.expect(
+            SyntaxKind::CloseBrace,
+            &[t![mod], t![use], t![fn], t![struct], t![layout]],
+        );
+    });
+}
+
+fn parse_layout_member_list(parser: &mut Parser) {
+    parser.node(SyntaxKind::LayoutMemberList, |parser| {
+        loop {
+            if !parser.is_at(SyntaxKind::BindingKeyword) {
+                break;
+            }
+
+            parser.begin_node(SyntaxKind::LayoutMember);
+
+            parser.consume(SyntaxKind::BindingKeyword);
+            parser.ws0();
+
+            parser.begin_node(SyntaxKind::BindingIndex);
+            parser.expect(SyntaxKind::OpenParen, &[SyntaxKind::CloseParen, SyntaxKind::IntLiteral, t![mod], t![use], t![fn], t![struct], t![layout]]);
+            parser.ws0();
+
+            parse_expression(parser);
+            
+            parser.expect(SyntaxKind::CloseParen, &[t![mod], t![use], t![fn], t![struct], t![layout]]);
+            parser.end_node();
+            parser.ws0();
+
+            parser.begin_node(SyntaxKind::BindingKind);
+            parser.expect_any(&[t![uniform], t![storage], t![image], t![sampler]], &[t![mod], t![use], t![fn], t![struct], t![layout]]);
+            parser.ws0();
+            parser.end_node();
+
+            // parse the member name
+            parser.begin_node(SyntaxKind::Name);
+            parser.expect(
+                SyntaxKind::Identifier,
+                &[
+                    SyntaxKind::CloseBrace,
+                    t![:],
+                    t![,],
+                    t![mod],
+                    t![use],
+                    t![fn],
+                    t![struct],
+                    t![layout],
+                ],
+            );
+            parser.end_node();
+            parser.ws0();
+
+            // parse the : before the type
+            parser.expect(
+                t![:],
+                &[
+                    SyntaxKind::CloseBrace,
+                    t![,],
+                    t![mod],
+                    t![use],
+                    t![fn],
+                    t![struct],
+                    t![layout],
+                ],
+            );
+            parser.ws0();
+
+            // parse the type
+            parse_item_path(parser);
+            parser.ws0();
+
+            parser.end_node();
+
+            // parse the comma
+            if !parser.consume_if(t![,]) {
+                break;
+            }
+
+            parser.ws0();
+        }
+
+        parser.ws0();
     });
 }
 
@@ -82,12 +199,12 @@ fn parse_module_declaration(parser: &mut Parser) {
         parser.ws1();
 
         parser.begin_node(SyntaxKind::Name);
-        parser.expect(t![ident], &[t![;], t![mod], t![use], t![fn], t![struct]]);
+        parser.expect(t![ident], &[t![;], t![mod], t![use], t![fn], t![struct], t![layout]]);
         parser.end_node();
 
         parser.ws0();
 
-        parser.expect(t![;], &[t![mod], t![use], t![fn], t![struct]]);
+        parser.expect(t![;], &[t![mod], t![use], t![fn], t![struct], t![layout]]);
     });
 }
 
@@ -99,7 +216,7 @@ fn parse_use_declaration(parser: &mut Parser) {
 
         parse_use_tree(parser);
 
-        parser.expect(t![;], &[t![mod], t![use], t![fn], t![struct]]);
+        parser.expect(t![;], &[t![mod], t![use], t![fn], t![struct], t![layout]]);
     });
 }
 
@@ -120,6 +237,7 @@ fn parse_use_tree(parser: &mut Parser) {
                 t![use],
                 t![fn],
                 t![struct],
+                t![layout],
             ],
         );
         parser.expect(
@@ -132,6 +250,7 @@ fn parse_use_tree(parser: &mut Parser) {
                 t![use],
                 t![fn],
                 t![struct],
+                t![layout],
             ],
         );
 
@@ -174,7 +293,7 @@ fn parse_use_group(parser: &mut Parser) {
 
     parser.expect(
         t!['}'],
-        &[t![:], t![;], t![mod], t![use], t![fn], t![struct]],
+        &[t![:], t![;], t![mod], t![use], t![fn], t![struct], t![layout]],
     );
     parser.end_node();
 }
@@ -194,6 +313,7 @@ fn parse_use_segment(parser: &mut Parser) {
             t![use],
             t![fn],
             t![struct],
+            t![layout],
         ],
     );
     parser.end_node();
@@ -210,7 +330,7 @@ fn parse_struct_declaration(parser: &mut Parser) {
         parser.begin_node(SyntaxKind::Name);
         parser.expect(
             t![ident],
-            &[t!['{'], t!['}'], t![mod], t![use], t![fn], t![struct]],
+            &[t!['{'], t!['}'], t![mod], t![use], t![fn], t![struct], t![layout]],
         );
         parser.end_node();
         parser.ws0();
@@ -218,7 +338,7 @@ fn parse_struct_declaration(parser: &mut Parser) {
         // parse open brace
         parser.expect(
             SyntaxKind::OpenBrace,
-            &[SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct]],
+            &[SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct], t![layout]],
         );
         parser.ws0();
 
@@ -227,7 +347,7 @@ fn parse_struct_declaration(parser: &mut Parser) {
         // parse close brace
         parser.expect(
             SyntaxKind::CloseBrace,
-            &[t![mod], t![use], t![fn], t![struct]],
+            &[t![mod], t![use], t![fn], t![struct], t![layout]],
         );
     });
 }
@@ -254,6 +374,7 @@ fn parse_struct_member_list(parser: &mut Parser) {
                     t![use],
                     t![fn],
                     t![struct],
+                    t![layout],
                 ],
             );
             parser.end_node();
@@ -269,6 +390,7 @@ fn parse_struct_member_list(parser: &mut Parser) {
                     t![use],
                     t![fn],
                     t![struct],
+                    t![layout],
                 ],
             );
             parser.ws0();
@@ -305,7 +427,7 @@ fn parse_item_path_segment(parser: &mut Parser) {
     parser.begin_node(SyntaxKind::Name);
     parser.expect(
         t![ident],
-        &[t![:], t![,], t![;], t![mod], t![use], t![fn], t![struct]],
+        &[t![:], t![,], t![;], t![mod], t![use], t![fn], t![struct], t![layout]],
     );
     parser.end_node();
     parser.ws0();
@@ -321,6 +443,7 @@ fn parse_item_path_segment(parser: &mut Parser) {
                 t![use],
                 t![fn],
                 t![struct],
+                t![layout],
             ],
         );
         parser.ws0();
@@ -355,6 +478,7 @@ fn parse_function_declaration(parser: &mut Parser) {
             t![use],
             t![fn],
             t![struct],
+            t![layout],
         ],
     );
     parser.end_node();
@@ -373,6 +497,7 @@ fn parse_function_declaration(parser: &mut Parser) {
             t![use],
             t![fn],
             t![struct],
+            t![layout],
         ],
     );
     parser.ws0();
@@ -392,6 +517,7 @@ fn parse_function_declaration(parser: &mut Parser) {
             t![use],
             t![fn],
             t![struct],
+            t![layout],
         ],
     );
     parser.ws0();
@@ -411,6 +537,7 @@ fn parse_function_declaration(parser: &mut Parser) {
                 t![use],
                 t![fn],
                 t![struct],
+                t![layout],
             ],
         );
         parser.ws0();
@@ -473,6 +600,7 @@ fn parse_argument(parser: &mut Parser) {
             t![use],
             t![fn],
             t![struct],
+            t![layout],
         ],
     );
     parser.ws0();
@@ -489,7 +617,7 @@ fn parse_block(parser: &mut Parser) {
     parse_statements(parser);
     parser.ws0();
 
-    parser.expect(t!['}'], &[t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(t!['}'], &[t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
 }
 
@@ -516,6 +644,7 @@ fn parse_statements(parser: &mut Parser) {
             }
     
             _ => {
+                // TODO check if we are at statement or expression start, or block end, otherwise error
                 // no more statements to parse
                 break;
             },
@@ -530,7 +659,7 @@ fn parse_let_statement(parser: &mut Parser) {
     parser.ws1();
 
     parser.begin_node(SyntaxKind::Name);
-    parser.expect(t![ident], &[t![:], t![=], t![;], t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(t![ident], &[t![:], t![=], t![;], t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
     parser.ws0();
 
@@ -543,13 +672,13 @@ fn parse_let_statement(parser: &mut Parser) {
         parser.ws0();
     }
 
-    parser.expect(t![=], &[t![;], t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(t![=], &[SyntaxKind::CloseBrace, t![;], t![let], t![if], t![loop], t![while], t![for], t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.ws0();
 
     parse_expression(parser);
     parser.ws0();
 
-    parser.expect(t![;], &[t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(t![;], &[SyntaxKind::CloseBrace, t![let], t![if], t![loop], t![while], t![for], t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
 }
 
@@ -694,7 +823,7 @@ fn parse_index_operator(parser: &mut Parser, checkpoint: Checkpoint) {
     parser.end_node();
     parser.ws0();
 
-    parser.expect(SyntaxKind::CloseBracket, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(SyntaxKind::CloseBracket, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
 }
 
@@ -723,7 +852,7 @@ fn parse_call_operator(parser: &mut Parser, checkpoint: Checkpoint) {
     }
     parser.end_node();
 
-    parser.expect(SyntaxKind::CloseParen, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(SyntaxKind::CloseParen, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
 }
 
@@ -732,7 +861,7 @@ fn parse_dot_operator(parser: &mut Parser, checkpoint: Checkpoint) {
     parser.consume(t![.]);
     parser.ws0();
 
-    parser.expect(t![ident], &[SyntaxKind::OpenParen, SyntaxKind::CloseParen, SyntaxKind::CloseBracket, SyntaxKind::CloseBrace, t![;], t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(t![ident], &[SyntaxKind::OpenParen, SyntaxKind::CloseParen, SyntaxKind::CloseBracket, SyntaxKind::CloseBrace, t![;], t![mod], t![use], t![fn], t![struct], t![layout]]);
 
     parser.end_node();
 }
@@ -771,7 +900,7 @@ fn parse_group_expression(parser: &mut Parser) {
     parse_expression(parser);
     parser.ws0();
 
-    parser.expect(SyntaxKind::CloseParen, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct]]);
+    parser.expect(SyntaxKind::CloseParen, &[t![;], SyntaxKind::CloseBrace, t![mod], t![use], t![fn], t![struct], t![layout]]);
     parser.end_node();
 }
 
@@ -1047,8 +1176,11 @@ mod tests {
         for input in inputs {
             let token = lexer::tokenize(input);
             let result = parse(&token, input);
+            dbg!(result.diagnostics());
+            dbg!(result.tree());
             assert_eq!(result.diagnostics.len(), 0);
         }
+        panic!();
     }
 
     #[test]
@@ -1166,6 +1298,19 @@ mod tests {
             "fn foo() { +1 }",
             "fn foo() { !true }",
             "fn foo() { ~0 }",
+        ];
+
+        for input in inputs {
+            let token = lexer::tokenize(input);
+            let result = parse(&token, input);
+            assert_eq!(result.diagnostics.len(), 0);
+        }
+    }
+
+    #[test]
+    fn test_layout() {
+        let inputs = [
+            "layout Foo { binding(0) uniform bar: Bar, }",
         ];
 
         for input in inputs {

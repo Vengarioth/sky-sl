@@ -1,3 +1,5 @@
+use crate::intern::Name;
+
 use super::ExpressionKind;
 use rowan::TextRange;
 
@@ -9,13 +11,13 @@ pub enum StatementKind {
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct LetStatement {
-    pub name: String,
+    pub name: Name,
     pub expression: ExpressionKind,
     pub span: TextRange,
 }
 
 impl LetStatement {
-    pub fn new(name: String, expression: ExpressionKind, span: TextRange) -> Self {
+    pub fn new(name: Name, expression: ExpressionKind, span: TextRange) -> Self {
         Self {
             name,
             expression,

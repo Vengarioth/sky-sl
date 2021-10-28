@@ -1,4 +1,6 @@
 use rowan::TextRange;
+use crate::{hir::named::NamedItemKind, intern::Name, text::Locate};
+
 use super::Block;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -18,18 +20,32 @@ impl FunctionKind {
     }
 }
 
+impl Locate for FunctionKind {
+    type Item = NamedItemKind;
+
+    fn locate(&self, offset: rowan::TextSize) -> Option<Self::Item> {
+        if !self.span.contains(offset) {
+            return None;
+        }
+
+        self.signature.locate(offset)
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct FunctionSignature {
-    pub name: String,
+    pub name: Name,
+    pub item: NamedItemKind,
     pub arguments: Vec<FunctionArgument>,
-    pub return_type: Option<String>,
+    pub return_type: Option<NamedItemKind>,
     pub span: TextRange,
 }
 
 impl FunctionSignature {
-    pub fn new(name: String, arguments: Vec<FunctionArgument>, return_type: Option<String>, span: TextRange) -> Self {
+    pub fn new(name: Name, item: NamedItemKind, arguments: Vec<FunctionArgument>, return_type: Option<NamedItemKind>, span: TextRange) -> Self {
         Self {
             name,
+            item,
             arguments,
             return_type,
             span,
@@ -37,18 +53,30 @@ impl FunctionSignature {
     }
 }
 
+impl Locate for FunctionSignature {
+    type Item = NamedItemKind;
+
+    fn locate(&self, offset: rowan::TextSize) -> Option<Self::Item> {
+        if self.span.contains(offset) {
+            Some(self.item.clone())
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub struct FunctionArgument {
-    pub name: String,
-    pub ty_name: String,
+    pub name: Name,
+    pub item_type: NamedItemKind,
     pub span: TextRange,
 }
 
 impl FunctionArgument {
-    pub fn new(name: String, ty_name: String, span: TextRange) -> Self {
+    pub fn new(name: Name, item_type: NamedItemKind, span: TextRange) -> Self {
         Self {
             name,
-            ty_name,
+            item_type,
             span,
         }
     }

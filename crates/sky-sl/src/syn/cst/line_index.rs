@@ -71,12 +71,8 @@ impl LineIndex {
     }
 
     pub fn find_offset(&self, line: u32, character: u32) -> TextSize {
-        let mut offset = TextSize::from(0);
-        for i in 1..line {
-            offset += self.newlines[i as usize];
-        }
-        offset += TextSize::from(character);
-
-        TextSize::from(offset)
+        let line = self.newlines[line as usize];
+        let character: TextSize = character.into();
+        TextSize::from(line + character)
     }
 }
